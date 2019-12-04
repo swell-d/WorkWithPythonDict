@@ -86,11 +86,11 @@ class SaveDictToFile():
 
 
 class SaveDictToFileTests(unittest.TestCase, SaveDictToFile):
-    __data = {'first': {'1': '1\r\n1', '2': 22.2}, 'second': {'2': 12345678901234567890, '3': '"4""4', '4': ''}}
+    __data = {'elem1': {'first': '1\r\n1', 'second': 22.2}, 'elem2': {'second': 12345678901234567890, 'third': '"4""4', 'fourth': ''}}
 
     def test_save_to_xlsx(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_.xlsx'
-        result = [['#', '1', '2', '3'], ['1', '1\r\n1', '22.2', 'None'], ['2', 'None', '12345678901234567890', '"4""4']]
+        result = [['#', 'first', 'second', 'third'], ['1', '1\r\n1', '22.2', 'None'], ['2', 'None', '12345678901234567890', '"4""4']]
         xlsx = []
         SaveDictToFile.save_to_xlsx(self.__data)
         sheet = load_workbook(file_name).active
@@ -104,7 +104,7 @@ class SaveDictToFileTests(unittest.TestCase, SaveDictToFile):
 
     def test_save_to_csv(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_.csv'
-        result = '"#","1","2","3"\r\n"1","1\r\n1","22,2",""\r\n"2","","12345678901234567890","""4""""4"\r\n'
+        result = '"#","first","second","third"\r\n"1","1\r\n1","22,2",""\r\n"2","","12345678901234567890","""4""""4"\r\n'
         SaveDictToFile.save_to_csv(self.__data)
         with codecs.open(file_name, 'r', encoding='utf-8') as file:
             csv = file.read()
@@ -113,7 +113,7 @@ class SaveDictToFileTests(unittest.TestCase, SaveDictToFile):
 
     def test_save_to_csv_old(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_old.csv'
-        result = '1,2,3\r\n"1\r\n1",22.2,\r\n,12345678901234567890,"""4""""4"\r\n'
+        result = 'first,second,third\r\n"1\r\n1",22.2,\r\n,12345678901234567890,"""4""""4"\r\n'
         SaveDictToFile._save_to_csv_old(self.__data, 'old')
         with codecs.open(file_name, 'r', encoding='utf-8') as file:
             csv = file.read()
