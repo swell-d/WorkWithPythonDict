@@ -9,13 +9,12 @@ from openpyxl import Workbook
 from openpyxl import load_workbook
 
 
-SEPARATOR = ','
-NEWLINE = '\r\n'
-
-
 class SaveDictToFile():
+    __SEPARATOR = ','
+    __NEWLINE = '\r\n'
+
     @classmethod
-    def init(cls, data, filename, fieldnames):
+    def __init(cls, data, filename, fieldnames):
         if fieldnames is None: fieldnames = []
         if not isinstance(data, (dict, list)): raise ValueError('Wrong data')
         if not isinstance(filename, str): raise ValueError('Wrong filename')
@@ -23,11 +22,11 @@ class SaveDictToFile():
         for key in fieldnames:
             if not isinstance(key, str): raise ValueError('Wrong fieldnames')
         data = copy.deepcopy(data)
-        fieldnames = cls.generate_fieldnames(data, fieldnames)
+        fieldnames = cls.__generate_fieldnames(data, fieldnames)
         return data, fieldnames
 
     @classmethod
-    def generate_fieldnames(cls, data, fieldnames):
+    def __generate_fieldnames(cls, data, fieldnames):
         new_fieldnames = []
         for each in data.values() if isinstance(data, dict) else data:
             if not isinstance(each, dict): raise ValueError('Wrong data')
@@ -41,7 +40,7 @@ class SaveDictToFile():
 
     @classmethod
     def save_to_xlsx(cls, data, filename='', fieldnames=None):
-        data, fieldnames = cls.init(data, filename, fieldnames)
+        data, fieldnames = cls.__init(data, filename, fieldnames)
         wb = Workbook()
         ws = wb.active
         ws.append(['#'] + fieldnames)
@@ -54,18 +53,18 @@ class SaveDictToFile():
 
     @classmethod
     def save_to_csv(cls, data, filename='', fieldnames=None):
-        data, fieldnames = cls.init(data, filename, fieldnames)
+        data, fieldnames = cls.__init(data, filename, fieldnames)
         with codecs.open(f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_{filename}.csv', 'w', encoding='utf-8') as file:
-            file.write('"#",' + SEPARATOR.join([f'"{x}"' for x in fieldnames]) + NEWLINE)
+            file.write('"#",' + cls.__SEPARATOR.join([f'"{x}"' for x in fieldnames]) + cls.__NEWLINE)
             for i, each in enumerate(data.values() if isinstance(data, dict) else data):
                 line = [i + 1]
                 for key in fieldnames:
                     line.append(str(each.get(key, '')).replace('"', '""'))
-                file.write(SEPARATOR.join([f'"{x}"' for x in line]) + NEWLINE)
+                file.write(cls.__SEPARATOR.join([f'"{x}"' for x in line]) + cls.__NEWLINE)
 
     @classmethod
-    def save_to_csv_old(cls, data, filename='', fieldnames=None):
-        data, fieldnames = cls.init(data, filename, fieldnames)
+    def _save_to_csv_old(cls, data, filename='', fieldnames=None):
+        data, fieldnames = cls.__init(data, filename, fieldnames)
         with codecs.open(f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_{filename}.csv', 'w', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
@@ -83,13 +82,13 @@ class SaveDictToFile():
 
 
 class SaveDictToFileTests(unittest.TestCase, SaveDictToFile):
-    data = {'first': {'1': '1\r\n1', '2': 22.2}, 'second': {'2': 33, '3': '"4""4', '4': ''}}
+    __data = {'first': {'1': '1\r\n1', '2': 22.2}, 'second': {'2': 33, '3': '"4""4', '4': ''}}
 
     def test_save_to_xlsx(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_.xlsx'
         result = [['#', '1', '2', '3'], ['1', '1\r\n1', '22,2', 'None'], ['2', 'None', '33', '"4""4']]
         xlsx = []
-        SaveDictToFile.save_to_xlsx(self.data)
+        SaveDictToFile.save_to_xlsx(self.__data)
         sheet = load_workbook(file_name).active
         for row in range(1, sheet.max_row + 1):
             row_data = []
@@ -102,7 +101,7 @@ class SaveDictToFileTests(unittest.TestCase, SaveDictToFile):
     def test_save_to_csv(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_.csv'
         result = '"#","1","2","3"\r\n"1","1\r\n1","22,2",""\r\n"2","","33","""4""""4"\r\n'
-        SaveDictToFile.save_to_csv(self.data)
+        SaveDictToFile.save_to_csv(self.__data)
         with codecs.open(file_name, 'r', encoding='utf-8') as file:
             csv = file.read()
         self.assertEqual(result, csv)
@@ -111,7 +110,7 @@ class SaveDictToFileTests(unittest.TestCase, SaveDictToFile):
     def test_save_to_csv_old(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_old.csv'
         result = '1,2,3\r\n"1\r\n1","22,2",\r\n,33,"""4""""4"\r\n'
-        SaveDictToFile.save_to_csv_old(self.data, 'old')
+        SaveDictToFile._save_to_csv_old(self.__data, 'old')
         with codecs.open(file_name, 'r', encoding='utf-8') as file:
             csv = file.read()
         self.assertEqual(result, csv)
