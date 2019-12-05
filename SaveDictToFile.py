@@ -32,7 +32,7 @@ class SaveDictToFile():
         for each in data.values() if isinstance(data, dict) else data:
             if not isinstance(each, dict): raise ValueError('Wrong data')
             for key, value in each.items():
-                if value and key not in new_fieldnames: new_fieldnames.append(str(key))
+                if (value or value != '') and key not in new_fieldnames: new_fieldnames.append(str(key))
         additional_fields = [str(x) for x in new_fieldnames if x not in fieldnames]
         cleared_fields = [str(x) for x in fieldnames if x not in new_fieldnames]
         if cleared_fields: print('deleted columns: ' + ', '.join(cleared_fields))
