@@ -107,7 +107,7 @@ class SaveDictToFileTests(unittest.TestCase):
                 row_data.append(str(sheet.cell(row=row, column=column).value))
             xlsx.append(row_data)
         self.assertEqual(result, xlsx)
-        from load_from_file import LoadDictFromFile
+        from LoadDictFromFile import LoadDictFromFile
         self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(file_name))
         self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(file_name, maincolumn='#'))
         os.remove(file_name)
@@ -119,7 +119,7 @@ class SaveDictToFileTests(unittest.TestCase):
         with codecs.open(file_name, 'r', encoding='utf-8') as file:
             csv = file.read()
         self.assertEqual(result, csv)
-        from load_from_file import LoadDictFromFile
+        from LoadDictFromFile import LoadDictFromFile
         self.assertEqual(self.__data_csv, LoadDictFromFile.csv_import(file_name))
         self.assertEqual(self.__data_csv, LoadDictFromFile.csv_import(file_name, maincolumn='#'))
         os.remove(file_name)
