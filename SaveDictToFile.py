@@ -1,10 +1,10 @@
 import codecs
 import copy
-import os
 import csv
+import os
+import re
 import unittest
 from datetime import datetime
-
 from openpyxl import Workbook
 from openpyxl import load_workbook
 
@@ -32,14 +32,14 @@ class SaveDictToFile():
         for each in data.values() if isinstance(data, dict) else data:
             if not isinstance(each, dict): raise ValueError('Wrong data')
             for key, value in each.items():
-                if (value or value != '') and key not in new_fieldnames: new_fieldnames.append(str(key))
+                if value != '' and key not in new_fieldnames: new_fieldnames.append(str(key))
         additional_fields = [str(x) for x in new_fieldnames if x not in fieldnames]
         cleared_fields = [str(x) for x in fieldnames if x not in new_fieldnames]
         if cleared_fields: print('deleted columns: ' + ', '.join(cleared_fields))
         return [str(x) for x in fieldnames if x in new_fieldnames] + additional_fields
 
     @classmethod
-    def save_to_xlsx(cls, data, filename='', fieldnames=None):
+    def save_to_xlsx(cls, data, filename='', fieldnames=None, optimize=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
         wb = Workbook()
         ws = wb.active
@@ -48,13 +48,14 @@ class SaveDictToFile():
             line = [i + 1]
             for key in fieldnames:
                 value = each.get(key, '')
-                if not isinstance(value, (int, float)) or len(str(value)) > 10: value = str(value)
+                if not isinstance(value, (int, float)) or len(str(value)) > 10:
+                    value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                 line.append(value)
             ws.append(line)
         wb.save(f'{cls.__DATE}_{filename}.xlsx')
 
     @classmethod
-    def save_to_csv(cls, data, filename='', fieldnames=None):
+    def save_to_csv(cls, data, filename='', fieldnames=None, optimize=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
         with codecs.open(f'{cls.__DATE}_{filename}.csv', 'w', encoding='utf-8') as file:
             file.write('"#",' + cls.__SEPARATOR.join([f'"{x}"' for x in fieldnames]) + cls.__NEWLINE)
@@ -63,11 +64,12 @@ class SaveDictToFile():
                 for key in fieldnames:
                     value = each.get(key, '')
                     if isinstance(value, float): value = str(value).replace('.', ',')
-                    line.append(str(value).replace('"', '""'))
+                    value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
+                    line.append(value.replace('"', '""'))
                 file.write(cls.__SEPARATOR.join([f'"{x}"' for x in line]) + cls.__NEWLINE)
 
     @classmethod
-    def _save_to_csv_old(cls, data, filename='', fieldnames=None):
+    def _save_to_csv_old(cls, data, filename='', fieldnames=None, optimize=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
         with codecs.open(f'{cls.__DATE}_{filename}.csv', 'w', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=fieldnames)
@@ -80,13 +82,18 @@ class SaveDictToFile():
                 writer.writerow(each)
 
     @classmethod
-    def save_to_files(cls, data, filename='', fieldnames=None):
-        cls.save_to_xlsx(data, filename, fieldnames)
-        cls.save_to_csv(data, filename, fieldnames)
+    def save_to_files(cls, data, filename='', fieldnames=None, optimize=False):
+        cls.save_to_xlsx(data, filename, fieldnames, optimize)
+        cls.save_to_csv(data, filename, fieldnames, optimize)
 
 
-class SaveDictToFileTests(unittest.TestCase, SaveDictToFile):
-    __data = {'elem1': {'first': '1\r\n1', 'second': 22.2}, 'elem2': {'second': 12345678901234567890, 'third': '"4""4', 'fourth': ''}}
+class SaveDictToFileTests(unittest.TestCase):
+    __data = {'elem1': {'first': '1\r\n1', 'second': 22.2},
+              'elem2': {'second': 12345678901234567890, 'third': '"4""4', 'fourth': ''}}
+    __data_xlsx = {'1': {'#': 1, 'first': '1\r\n1', 'second': 22.2, 'third': ''},
+                   '2': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+    __data_csv = {'1': {'#': '1', 'first': '1\r\n1', 'second': '22,2', 'third': ''},
+                  '2': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
 
     def test_save_to_xlsx(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_.xlsx'
@@ -100,6 +107,9 @@ class SaveDictToFileTests(unittest.TestCase, SaveDictToFile):
                 row_data.append(str(sheet.cell(row=row, column=column).value))
             xlsx.append(row_data)
         self.assertEqual(result, xlsx)
+        from load_from_file import LoadDictFromFile
+        self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(file_name))
+        self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(file_name, maincolumn='#'))
         os.remove(file_name)
 
     def test_save_to_csv(self):
@@ -109,12 +119,15 @@ class SaveDictToFileTests(unittest.TestCase, SaveDictToFile):
         with codecs.open(file_name, 'r', encoding='utf-8') as file:
             csv = file.read()
         self.assertEqual(result, csv)
+        from load_from_file import LoadDictFromFile
+        self.assertEqual(self.__data_csv, LoadDictFromFile.csv_import(file_name))
+        self.assertEqual(self.__data_csv, LoadDictFromFile.csv_import(file_name, maincolumn='#'))
         os.remove(file_name)
 
     def test_save_to_csv_old(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_old.csv'
         result = 'first,second,third\r\n"1\r\n1",22.2,\r\n,12345678901234567890,"""4""""4"\r\n'
-        SaveDictToFile._save_to_csv_old(self.__data, 'old')
+        SaveDictToFile._save_to_csv_old(self.__data, filename='old')
         with codecs.open(file_name, 'r', encoding='utf-8') as file:
             csv = file.read()
         self.assertEqual(result, csv)
