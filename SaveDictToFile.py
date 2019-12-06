@@ -1,16 +1,29 @@
 import codecs
 import copy
 import csv
+import functools
 import os
 import re
+import time
 import unittest
 from datetime import datetime
 from openpyxl import Workbook
 from openpyxl import load_workbook
 
 
+def print_run_time(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        print(f'{func.__name__}: done in {round(time.time() - start_time, 1)} seconds')
+        return result
+    return wrapper
+
+
 class SaveDictToFile():
     __SEPARATOR = ','
+    # __QUOTECHAR = '"'  # Todo - not yet in use
     __NEWLINE = '\r\n'
     __DATE = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
 
@@ -39,6 +52,7 @@ class SaveDictToFile():
         return [str(x) for x in fieldnames if x in new_fieldnames] + additional_fields
 
     @classmethod
+    @print_run_time
     def save_to_xlsx(cls, data, filename='', fieldnames=None, optimize=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
         wb = Workbook()
@@ -55,6 +69,7 @@ class SaveDictToFile():
         wb.save(f'{cls.__DATE}_{filename}.xlsx')
 
     @classmethod
+    @print_run_time
     def save_to_csv(cls, data, filename='', fieldnames=None, optimize=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
         with codecs.open(f'{cls.__DATE}_{filename}.csv', 'w', encoding='utf-8') as file:
@@ -69,6 +84,7 @@ class SaveDictToFile():
                 file.write(cls.__SEPARATOR.join([f'"{x}"' for x in line]) + cls.__NEWLINE)
 
     @classmethod
+    @print_run_time
     def _save_to_csv_old(cls, data, filename='', fieldnames=None, optimize=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
         with codecs.open(f'{cls.__DATE}_{filename}.csv', 'w', encoding='utf-8') as file:
