@@ -5,6 +5,7 @@ import re
 import unittest
 from datetime import datetime
 from openpyxl import load_workbook
+from SaveDictToFile import print_run_time
 
 
 class LoadDictFromFile():
@@ -46,6 +47,7 @@ class LoadDictFromFile():
         return titles_original
 
     @classmethod
+    @print_run_time
     def csv_import(cls, filename, maincolumn=None, language=None, optimize=False):
         imports = {}
         correct = cls.none_to_empty if not optimize else cls.clr
@@ -54,12 +56,13 @@ class LoadDictFromFile():
             data = [row for row in reader]
         titles = cls.titles(data[0], language, correct)
         index = cls.find_index(maincolumn, titles)
-        for a, row in enumerate(data[1:]):
-            name = str(a + 1 if index is None else correct(row[index]))
+        for row in data[1:]:
+            name = str(correct(row[index] if index is not None else len(imports) + 1))
             if name: imports[name] = {titles[i]: correct(row[i]) for i in range(0, len(titles))}
         return imports
 
     @classmethod
+    @print_run_time
     def xlsx_import(cls, filename, maincolumn=None, language=None, optimize=False):
         imports = {}
         correct = cls.none_to_empty if not optimize else cls.clr
@@ -68,7 +71,7 @@ class LoadDictFromFile():
         index = cls.find_index(maincolumn, titles)
         for a in range(2, sheet.max_row+1):
             row = [sheet.cell(row=a, column=col).value for col in range(1, len(titles)+1)]
-            name = str(a - 1 if index is None else correct(row[index]))
+            name = str(correct(row[index] if index is not None else len(imports) + 1))
             if name: imports[name] = {titles[i]: correct(row[i]) for i in range(0, len(titles))}
         return imports
 
