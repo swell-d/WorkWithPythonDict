@@ -21,7 +21,7 @@ def print_run_time(func):
     return wrapper
 
 
-class SaveDictToFile():
+class SaveDictToFile:
     __SEPARATOR = ','
     # __QUOTECHAR = '"'  # Todo - not yet in use
     __NEWLINE = '\r\n'
