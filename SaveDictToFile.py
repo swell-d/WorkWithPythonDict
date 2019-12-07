@@ -108,8 +108,8 @@ class SaveDictToFileTests(unittest.TestCase):
               'elem2': {'second': 12345678901234567890, 'third': '"4""4', 'fourth': ''}}
     __data_xlsx = {'1': {'#': 1, 'first': '1\r\n1', 'second': 22.2, 'third': ''},
                    '2': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
-    __data_csv = {'1': {'#': '1', 'first': '1\r\n1', 'second': '22,2', 'third': ''},
-                  '2': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+    __data_csv = {'1': {'#': 1, 'first': '1\r\n1', 'second': '22,2', 'third': ''},
+                  '2': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
 
     def test_save_to_xlsx(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_.xlsx'
