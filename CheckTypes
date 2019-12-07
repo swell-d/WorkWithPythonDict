@@ -1,0 +1,43 @@
+import re
+import unittest
+
+
+class CheckTypes:
+    int_compile = re.compile(r"^-?[1-9]\d*$")
+    float_compile = re.compile(r"^0$|^-?0[.,]\d+$|^-?[1-9]\d*([.,]\d+)?$")
+
+    @classmethod
+    def isint(cls, text):
+        return True if re.match(cls.int_compile, text) else False
+
+    @classmethod
+    def isfloat(cls, text):
+        if len(text) > 17: return False
+        return True if re.match(cls.float_compile, text) else False
+
+    @classmethod
+    def return_int_str(cls, text):
+        if cls.isint(text): return int(text)
+        return text
+
+    @classmethod
+    def return_int_float_str(cls, text):
+        if cls.isint(text): return int(text)
+        if cls.isfloat(text): return float(text.replace(',', '.'))
+        return text
+
+
+class CheckTypesTest(unittest.TestCase):
+    def test_isfloat(self):
+        good_values = ['-1', '0', '1', '-1.0', '1.0', '-0.1', '0.1', '911']
+        bad_values = ['', ' ', '-', '+', '00', '01', '0123', '-0', '-00', '-01', '-0123',
+                      '00.0', '01.', '-01.', '.1', '-.1', '1-', ' 1', '1 ', '-001',
+                      '0.1.1', '1..1', '0..1']
+        for val in good_values:
+            self.assertTrue(CheckTypes.isfloat(val), msg=val)
+        for val in bad_values:
+            self.assertFalse(CheckTypes.isfloat(val), msg=val)
+
+
+if __name__ == '__main__':
+    unittest.main()
