@@ -6,23 +6,12 @@ import unittest
 from datetime import datetime
 from openpyxl import load_workbook
 from SaveDictToFile import print_run_time
+from CheckTypes import CheckTypes
 
 
-class LoadDictFromFile():
+class LoadDictFromFile:
     __SEPARATOR = ','
     __QUOTECHAR = '"'
-    int_compile = re.compile(r"^-?[1-9]\d*$")
-    float_compile = re.compile(r"^0$|^-?0[.,]\d+$|^-?[1-9]\d*([.,]\d+)?$")
-
-    @classmethod
-    def isint(cls, text):
-        if len(text) > 10: return False
-        return True if re.match(cls.int_compile, text) else False
-
-    @classmethod
-    def isfloat(cls, text):
-        if len(text) > 10: return False
-        return True if re.match(cls.float_compile, text) else False
 
     @classmethod
     def clr(cls, value):
@@ -70,14 +59,9 @@ class LoadDictFromFile():
         index = cls.find_index(maincolumn, titles)
         for row in data[1:]:
             name = str(correct(row[index] if index is not None else len(imports) + 1))
-            if name: imports[name] = {titles[i]: cls.return_int_float_str(correct(row[i])) for i in range(0, len(titles))}
+            if name: imports[name] = {titles[i]: CheckTypes.return_int_str(correct(row[i]))
+                                      for i in range(0, len(titles))}
         return imports
-
-    @classmethod
-    def return_int_float_str(cls, text):
-        if cls.isint(text): return int(text)
-        # if cls.isfloat(text): return float(text.replace(',', '.'))  # Todo recognize float
-        return text
 
     @classmethod
     @print_run_time
@@ -138,16 +122,6 @@ class LoadDictFromFileTests(unittest.TestCase):
         self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(f'{self.__DATE}_test.xlsx'))
         self.assertEqual(self.__data_optimized_xlsx, LoadDictFromFile.xlsx_import(f'{self.__DATE}_test.xlsx', optimize=True))
         os.remove(f'{self.__DATE}_test.xlsx')
-
-    def test_isfloat(self):
-        good_values = ['-1', '0', '1', '-1.0', '1.0', '-0.1', '0.1', '911']
-        bad_values = ['', ' ', '-', '+', '00', '01', '0123', '-0', '-00', '-01', '-0123',
-                      '00.0', '01.', '-01.', '.1', '-.1', '1-', ' 1', '1 ', '-001',
-                      '0.1.1', '1..1', '0..1']
-        for val in good_values:
-            self.assertTrue(LoadDictFromFile.isfloat(val), msg=val)
-        for val in bad_values:
-            self.assertFalse(LoadDictFromFile.isfloat(val), msg=val)
 
 
 if __name__ == '__main__':
