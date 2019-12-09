@@ -56,10 +56,10 @@ class LoadDictFromFile:
             data = [row for row in reader]
         titles = cls.titles(data[0], language)
         index = cls.find_index(maincolumn, titles)
-        check_types_class = CheckTypes.CheckTypesRe
+        check_types = CheckTypes.CheckTypesRe()
         for row in data[1:]:
             name = str(cls.correct(row[index]) if index is not None else len(imports) + 1)
-            if name: imports[name] = {titles[i]: check_types_class.return_int_str(cls.correct(row[i])) if recognize else cls.correct(row[i])
+            if name: imports[name] = {titles[i]: check_types.return_int_str(cls.correct(row[i])) if recognize else cls.correct(row[i])
                                       for i in range(0, len(titles))}
         return imports
 
