@@ -7,6 +7,7 @@ import re
 import time
 import unittest
 from datetime import datetime
+
 from openpyxl import Workbook
 from openpyxl import load_workbook
 
@@ -109,7 +110,7 @@ class SaveDictToFileTests(unittest.TestCase):
     __data_xlsx = {'1': {'#': 1, 'first': '1\r\n1', 'second': 22.2, 'third': ''},
                    '2': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
     __data_csv = {'1': {'#': 1, 'first': '1\r\n1', 'second': '22,2', 'third': ''},
-                  '2': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+                  '2': {'#': 2, 'first': '', 'second': 12345678901234567890, 'third': '"4""4'}}
 
     def test_save_to_xlsx(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_.xlsx'
@@ -124,8 +125,8 @@ class SaveDictToFileTests(unittest.TestCase):
             xlsx.append(row_data)
         self.assertEqual(result, xlsx)
         from LoadDictFromFile import LoadDictFromFile
-        self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(file_name))
-        self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(file_name, maincolumn='#'))
+        self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(file_name, recognize=True))
+        self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(file_name, maincolumn='#', recognize=True))
         os.remove(file_name)
 
     def test_save_to_csv(self):
@@ -136,8 +137,8 @@ class SaveDictToFileTests(unittest.TestCase):
             csv = file.read()
         self.assertEqual(result, csv)
         from LoadDictFromFile import LoadDictFromFile
-        self.assertEqual(self.__data_csv, LoadDictFromFile.csv_import(file_name))
-        self.assertEqual(self.__data_csv, LoadDictFromFile.csv_import(file_name, maincolumn='#'))
+        self.assertEqual(self.__data_csv, LoadDictFromFile.csv_import(file_name, recognize=True))
+        self.assertEqual(self.__data_csv, LoadDictFromFile.csv_import(file_name, maincolumn='#', recognize=True))
         os.remove(file_name)
 
     def test_save_to_csv_old(self):
