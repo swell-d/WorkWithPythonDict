@@ -17,7 +17,7 @@ def print_run_time(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
-        print(f'{func.__name__}: done in {round(time.time() - start_time, 1)} seconds')
+        print(f'{func.__name__} / done in {round(time.time() - start_time, 1)} seconds')
         return result
     return wrapper
 
@@ -68,6 +68,7 @@ class SaveDictToFile:
                 line.append(value)
             ws.append(line)
         wb.save(f'{cls.__DATE}_{filename}.xlsx')
+        print(f"{cls.__DATE}_{filename}.xlsx / {line[0]} lines saved / ", end='')
 
     @classmethod
     @print_run_time
@@ -83,6 +84,7 @@ class SaveDictToFile:
                     value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                     line.append(value.replace('"', '""'))
                 file.write(cls.__SEPARATOR.join([f'"{x}"' for x in line]) + cls.__NEWLINE)
+        print(f"{cls.__DATE}_{filename}.csv / {line[0]} lines saved / ", end='')
 
     @classmethod
     @print_run_time
