@@ -17,7 +17,7 @@ def print_run_time(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
-        print(f'{func.__name__} / done in {round(time.time() - start_time, 1)} seconds')
+        print(f'done in {round(time.time() - start_time, 1)} seconds')  # {func.__name__}
         return result
     return wrapper
 
@@ -59,6 +59,7 @@ class SaveDictToFile:
         wb = Workbook()
         ws = wb.active
         ws.append(['#'] + fieldnames)
+        i = -1
         for i, each in enumerate(data.values() if isinstance(data, dict) else data):
             line = [i + 1]
             for key in fieldnames:
@@ -68,7 +69,7 @@ class SaveDictToFile:
                 line.append(value)
             ws.append(line)
         wb.save(f'{cls.__DATE}_{filename}.xlsx')
-        print(f"{cls.__DATE}_{filename}.xlsx / {line[0]} lines saved / ", end='')
+        print(f"{cls.__DATE}_{filename}.xlsx / {i + 1} lines saved / ", end='')
 
     @classmethod
     @print_run_time
@@ -76,6 +77,7 @@ class SaveDictToFile:
         data, fieldnames = cls.__init(data, filename, fieldnames)
         with codecs.open(f'{cls.__DATE}_{filename}.csv', 'w', encoding='utf-8') as file:
             file.write('"#",' + cls.__SEPARATOR.join([f'"{x}"' for x in fieldnames]) + cls.__NEWLINE)
+            i = -1
             for i, each in enumerate(data.values() if isinstance(data, dict) else data):
                 line = [i + 1]
                 for key in fieldnames:
@@ -84,7 +86,7 @@ class SaveDictToFile:
                     value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                     line.append(value.replace('"', '""'))
                 file.write(cls.__SEPARATOR.join([f'"{x}"' for x in line]) + cls.__NEWLINE)
-        print(f"{cls.__DATE}_{filename}.csv / {line[0]} lines saved / ", end='')
+        print(f"{cls.__DATE}_{filename}.csv / {i + 1} lines saved / ", end='')
 
     @classmethod
     @print_run_time
