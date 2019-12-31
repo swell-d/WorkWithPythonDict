@@ -61,6 +61,7 @@ class LoadDictFromFile:
             name = str(cls.correct(row[index]) if index is not None else len(imports) + 1)
             if name: imports[name] = {titles[i]: check_types.return_int_str(cls.correct(row[i])) if recognize else cls.correct(row[i])
                                       for i in range(0, len(titles))}
+        print(f"{filename} / {len(imports)} lines loaded / ", end='')
         return imports
 
     @classmethod
@@ -76,6 +77,7 @@ class LoadDictFromFile:
             name = str(row[index] if index is not None else len(imports) + 1)
             if name: imports[name] = {titles[i]: row[i]
                                       for i in range(0, len(titles))}
+        print(f"{filename} / {len(imports)} lines loaded / ", end='')
         return imports
 
 
