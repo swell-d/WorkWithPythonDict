@@ -8,8 +8,8 @@ from datetime import datetime
 from openpyxl import load_workbook
 from xlrd import open_workbook
 
-import CheckTypes
-from SaveDictToFile import print_run_time
+from CheckTypes import CheckTypesRe as CheckTypes
+from GlobalFunctions import print_run_time
 
 
 class LoadDictFromFile:
@@ -67,7 +67,7 @@ class LoadDictFromFile:
             data = [row for row in reader]
         titles = cls.__titles(data[0], language)
         index = cls.__find_index(maincolumn, titles)
-        check_types = CheckTypes.CheckTypesRe()
+        check_types = CheckTypes()
         for row in data[1:]:
             name = str(cls.__correct(row[index]) if index is not None else len(imports) + 1)
             if name: imports[name] = {titles[i]: check_types.return_int_str(cls.__correct(row[i])) if recognize else cls.__correct(row[i])

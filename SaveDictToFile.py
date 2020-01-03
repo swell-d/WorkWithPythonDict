@@ -1,26 +1,16 @@
 import codecs
 import copy
-import csv
-import functools
+# import csv
 import os
 import re
-import time
 import unittest
 from datetime import datetime
 
 from openpyxl import Workbook
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 
-
-def print_run_time(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        print(f'done in {round(time.time() - start_time, 1)} seconds')  # {func.__name__}
-        return result
-
-    return wrapper
+from GlobalFunctions import print_run_time
 
 
 class SaveDictToFile:
@@ -54,6 +44,20 @@ class SaveDictToFile:
         return [str(x) for x in fieldnames if x in new_fieldnames] + additional_fields
 
     @classmethod
+    def __enhancement(cls, ws):
+        def auto_column_width():
+            dims = {}
+            for row in ws.rows:
+                for cell in row:
+                    dims[cell.column_letter] = max((dims.get(cell.column_letter, 1), len(str(cell.value))))
+            for col, value in dims.items():
+                ws.column_dimensions[col].width = min(value + 2, 40)
+
+        ws.auto_filter.ref = f"A1:{get_column_letter(ws.max_column)}{ws.max_row}"
+        ws.freeze_panes = ws['A2']
+        auto_column_width()
+
+    @classmethod
     @print_run_time
     def save_to_xlsx(cls, data, filename='', fieldnames=None, optimize=False, open=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
@@ -70,6 +74,7 @@ class SaveDictToFile:
                     value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                 line.append(value)
             ws.append(line)
+        cls.__enhancement(ws)
         wb.save(newfilename)
         print(f"{newfilename} / {i + 1} lines saved / ", end='')
         if open: os.startfile(newfilename)
@@ -99,19 +104,19 @@ class SaveDictToFile:
         if open: os.startfile(newfilename)
         return newfilename
 
-    @classmethod
-    @print_run_time
-    def _save_to_csv_old(cls, data, filename='', fieldnames=None, optimize=False):
-        data, fieldnames = cls.__init(data, filename, fieldnames)
-        with codecs.open(f'{cls.__DATE}_{filename}.csv', 'w', encoding='utf-8') as file:
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
-            writer.writeheader()
-            for each in data.values() if isinstance(data, dict) else data:
-                for key in list(each).copy():
-                    if key not in fieldnames: del each[key]
-                for key in fieldnames:
-                    if key not in each: each[key] = ''
-                writer.writerow(each)
+    # @classmethod
+    # @print_run_time
+    # def _save_to_csv_old(cls, data, filename='', fieldnames=None, optimize=False):
+    #     data, fieldnames = cls.__init(data, filename, fieldnames)
+    #     with codecs.open(f'{cls.__DATE}_{filename}.csv', 'w', encoding='utf-8') as file:
+    #         writer = csv.DictWriter(file, fieldnames=fieldnames)
+    #         writer.writeheader()
+    #         for each in data.values() if isinstance(data, dict) else data:
+    #             for key in list(each).copy():
+    #                 if key not in fieldnames: del each[key]
+    #             for key in fieldnames:
+    #                 if key not in each: each[key] = ''
+    #             writer.writerow(each)
 
     @classmethod
     def save_to_files(cls, data, filename='', fieldnames=None, optimize=False):
@@ -157,14 +162,14 @@ class SaveDictToFileTests(unittest.TestCase):
         self.assertEqual(self.__data_csv, LoadDictFromFile.load(file_name, maincolumn='#', recognize=True))
         os.remove(file_name)
 
-    def test_save_to_csv_old(self):
-        file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_old.csv'
-        result = 'first,second,third\r\n"1\r\n1",22.2,\r\n,12345678901234567890,"""4""""4"\r\n'
-        SaveDictToFile._save_to_csv_old(self.__data, filename='old')
-        with codecs.open(file_name, 'r', encoding='utf-8') as file:
-            csv = file.read()
-        self.assertEqual(result, csv)
-        os.remove(file_name)
+    # def test_save_to_csv_old(self):
+    #     file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_old.csv'
+    #     result = 'first,second,third\r\n"1\r\n1",22.2,\r\n,12345678901234567890,"""4""""4"\r\n'
+    #     SaveDictToFile._save_to_csv_old(self.__data, filename='old')
+    #     with codecs.open(file_name, 'r', encoding='utf-8') as file:
+    #         csv = file.read()
+    #     self.assertEqual(result, csv)
+    #     os.remove(file_name)
 
 
 if __name__ == '__main__':
