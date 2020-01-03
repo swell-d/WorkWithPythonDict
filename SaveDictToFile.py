@@ -56,6 +56,7 @@ class SaveDictToFile:
     @print_run_time
     def save_to_xlsx(cls, data, filename='', fieldnames=None, optimize=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
+        newfilename = f'{cls.__DATE}_{filename}.xlsx'
         wb = Workbook()
         ws = wb.active
         ws.append(['#'] + fieldnames)
@@ -68,14 +69,16 @@ class SaveDictToFile:
                     value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                 line.append(value)
             ws.append(line)
-        wb.save(f'{cls.__DATE}_{filename}.xlsx')
-        print(f"{cls.__DATE}_{filename}.xlsx / {i + 1} lines saved / ", end='')
+        wb.save(newfilename)
+        print(f"{newfilename} / {i + 1} lines saved / ", end='')
+        return newfilename
 
     @classmethod
     @print_run_time
     def save_to_csv(cls, data, filename='', fieldnames=None, optimize=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
-        with codecs.open(f'{cls.__DATE}_{filename}.csv', 'w', encoding='utf-8') as file:
+        newfilename = f'{cls.__DATE}_{filename}.csv'
+        with codecs.open(newfilename, 'w', encoding='utf-8') as file:
             file.write('"#",' + cls.__SEPARATOR.join([f'"{x}"' for x in fieldnames]) + cls.__NEWLINE)
             i = -1
             for i, each in enumerate(data.values() if isinstance(data, dict) else data):
@@ -86,7 +89,8 @@ class SaveDictToFile:
                     value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                     line.append(value.replace('"', '""'))
                 file.write(cls.__SEPARATOR.join([f'"{x}"' for x in line]) + cls.__NEWLINE)
-        print(f"{cls.__DATE}_{filename}.csv / {i + 1} lines saved / ", end='')
+        print(f"{newfilename} / {i + 1} lines saved / ", end='')
+        return newfilename
 
     @classmethod
     @print_run_time
@@ -129,8 +133,8 @@ class SaveDictToFileTests(unittest.TestCase):
             xlsx.append(row_data)
         self.assertEqual(result, xlsx)
         from LoadDictFromFile import LoadDictFromFile
-        self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(file_name, recognize=True))
-        self.assertEqual(self.__data_xlsx, LoadDictFromFile.xlsx_import(file_name, maincolumn='#', recognize=True))
+        self.assertEqual(self.__data_xlsx, LoadDictFromFile.load(file_name, recognize=True))
+        self.assertEqual(self.__data_xlsx, LoadDictFromFile.load(file_name, maincolumn='#', recognize=True))
         os.remove(file_name)
 
     def test_save_to_csv(self):
@@ -141,8 +145,8 @@ class SaveDictToFileTests(unittest.TestCase):
             csv = file.read()
         self.assertEqual(result, csv)
         from LoadDictFromFile import LoadDictFromFile
-        self.assertEqual(self.__data_csv, LoadDictFromFile.csv_import(file_name, recognize=True))
-        self.assertEqual(self.__data_csv, LoadDictFromFile.csv_import(file_name, maincolumn='#', recognize=True))
+        self.assertEqual(self.__data_csv, LoadDictFromFile.load(file_name, recognize=True))
+        self.assertEqual(self.__data_csv, LoadDictFromFile.load(file_name, maincolumn='#', recognize=True))
         os.remove(file_name)
 
     def test_save_to_csv_old(self):
