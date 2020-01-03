@@ -59,7 +59,7 @@ class LoadDictFromFile:
 
     @classmethod
     @print_run_time
-    def _csv_import(cls, filename, maincolumn=None, language=None, optimize=False, recognize=False):
+    def _csv_import(cls, filename, maincolumn, language, optimize, recognize):
         cls.__optimize, cls.__recognize = optimize, recognize
         imports = {}
         with codecs.open(filename, 'r', encoding='utf-8') as file:
@@ -77,7 +77,7 @@ class LoadDictFromFile:
 
     @classmethod
     @print_run_time
-    def _xls_import(cls, filename, maincolumn=None, language=None, optimize=False, recognize=False):
+    def _xls_import(cls, filename, maincolumn, language, optimize, recognize):
         cls.__optimize, cls.__recognize = optimize, recognize
         imports = {}
         sheet = open_workbook(filename).sheet_by_index(0)
@@ -87,38 +87,45 @@ class LoadDictFromFile:
             row = [cls.__correct(sheet.cell(a, col).value) for col in range(0, len(titles))]
             name = str(row[index] if index is not None else len(imports) + 1)
             if name: imports[name] = {titles[i]: row[i] for i in range(0, len(titles))}
-        print(f"{filename} / {sheet.nrows - 1} lines / {len(imports)} loaded / {sheet.nrows - 1 - len(imports)} lost / ", end='')
+        print(
+            f"{filename} / {sheet.nrows - 1} lines / {len(imports)} loaded / {sheet.nrows - 1 - len(imports)} lost / ",
+            end='')
         return imports
 
     @classmethod
     @print_run_time
-    def _xlsx_import(cls, filename, maincolumn=None, language=None, optimize=False, recognize=False):
+    def _xlsx_import(cls, filename, maincolumn, language, optimize, recognize):
         cls.__optimize, cls.__recognize = optimize, recognize
         imports = {}
         sheet = load_workbook(filename).active
         titles = cls.__titles(cls.__xlsx_titles(sheet), language)
         index = cls.__find_index(maincolumn, titles)
-        for a in range(2, sheet.max_row+1):
+        for a in range(2, sheet.max_row + 1):
             row = [cls.__correct(sheet.cell(row=a, column=col).value) for col in range(1, len(titles) + 1)]
             name = str(row[index] if index is not None else len(imports) + 1)
             if name: imports[name] = {titles[i]: row[i] for i in range(0, len(titles))}
-        print(f"{filename} / {sheet.max_row - 1} lines / {len(imports)} loaded / {sheet.max_row - 1 - len(imports)} lost / ", end='')
+        print(
+            f"{filename} / {sheet.max_row - 1} lines / {len(imports)} loaded / {sheet.max_row - 1 - len(imports)} lost / ",
+            end='')
         return imports
 
     @classmethod
     def load(cls, filename, maincolumn=None, language=None, optimize=False, recognize=False):
-        if filename.endswith('.csv'): return cls._csv_import(filename, maincolumn, language, optimize, recognize)
-        elif filename.endswith('.xls'): return cls._xls_import(filename, maincolumn, language, optimize, recognize)
-        elif filename.endswith('.xlsx'): return cls._xlsx_import(filename, maincolumn, language, optimize, recognize)
-        else: raise ValueError('Wrong file')
+        if filename.endswith('.csv'):
+            func = cls._csv_import
+        elif filename.endswith('.xls'):
+            func = cls._xls_import
+        elif filename.endswith('.xlsx') or filename.endswith('.xlsm'):
+            func = cls._xlsx_import
+        else:
+            raise ValueError('Wrong filetype')
+        return func(filename, maincolumn, language, optimize, recognize)
 
     @staticmethod
     def change_main_column(data, maincolumn):
         result = {}
-        for each in data.values():
-            result[each[maincolumn]] = each
-        delta = len(data) - len(result)
-        print(f'change_main_column: {len(data)} lines / {len(result)} loaded / {delta} lost')
+        for each in data.values(): result[each[maincolumn]] = each
+        print(f'change_main_column: {len(data)} lines / {len(result)} loaded / {len(data) - len(result)} lost')
         return result
 
 

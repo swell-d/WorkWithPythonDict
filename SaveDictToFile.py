@@ -19,12 +19,13 @@ def print_run_time(func):
         result = func(*args, **kwargs)
         print(f'done in {round(time.time() - start_time, 1)} seconds')  # {func.__name__}
         return result
+
     return wrapper
 
 
 class SaveDictToFile:
-    __SEPARATOR = ','
-    # __QUOTECHAR = '"'  # Todo - not yet in use
+    __SEPARATOR = ','  # for csv only
+    __QUOTECHAR = '"'
     __NEWLINE = '\r\n'
     __DATE = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
 
@@ -54,7 +55,7 @@ class SaveDictToFile:
 
     @classmethod
     @print_run_time
-    def save_to_xlsx(cls, data, filename='', fieldnames=None, optimize=False):
+    def save_to_xlsx(cls, data, filename='', fieldnames=None, optimize=False, open=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
         newfilename = f'{cls.__DATE}_{filename}.xlsx'
         wb = Workbook()
@@ -71,15 +72,19 @@ class SaveDictToFile:
             ws.append(line)
         wb.save(newfilename)
         print(f"{newfilename} / {i + 1} lines saved / ", end='')
+        if open: os.startfile(newfilename)
         return newfilename
 
     @classmethod
     @print_run_time
-    def save_to_csv(cls, data, filename='', fieldnames=None, optimize=False):
+    def save_to_csv(cls, data, filename='', fieldnames=None, optimize=False, open=False):
         data, fieldnames = cls.__init(data, filename, fieldnames)
         newfilename = f'{cls.__DATE}_{filename}.csv'
         with codecs.open(newfilename, 'w', encoding='utf-8') as file:
-            file.write('"#",' + cls.__SEPARATOR.join([f'"{x}"' for x in fieldnames]) + cls.__NEWLINE)
+            file.write(f'{cls.__QUOTECHAR}#{cls.__QUOTECHAR}' +
+                       cls.__SEPARATOR +
+                       cls.__SEPARATOR.join([f'{cls.__QUOTECHAR}{x}{cls.__QUOTECHAR}' for x in fieldnames]) +
+                       cls.__NEWLINE)
             i = -1
             for i, each in enumerate(data.values() if isinstance(data, dict) else data):
                 line = [i + 1]
@@ -88,8 +93,10 @@ class SaveDictToFile:
                     if isinstance(value, float): value = str(value).replace('.', ',')
                     value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                     line.append(value.replace('"', '""'))
-                file.write(cls.__SEPARATOR.join([f'"{x}"' for x in line]) + cls.__NEWLINE)
+                file.write(cls.__SEPARATOR.join([f'{cls.__QUOTECHAR}{x}{cls.__QUOTECHAR}' for x in line]) +
+                           cls.__NEWLINE)
         print(f"{newfilename} / {i + 1} lines saved / ", end='')
+        if open: os.startfile(newfilename)
         return newfilename
 
     @classmethod
@@ -122,7 +129,8 @@ class SaveDictToFileTests(unittest.TestCase):
 
     def test_save_to_xlsx(self):
         file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_.xlsx'
-        result = [['#', 'first', 'second', 'third'], ['1', '1\r\n1', '22.2', 'None'], ['2', 'None', '12345678901234567890', '"4""4']]
+        result = [['#', 'first', 'second', 'third'], ['1', '1\r\n1', '22.2', 'None'],
+                  ['2', 'None', '12345678901234567890', '"4""4']]
         xlsx = []
         SaveDictToFile.save_to_xlsx(self.__data)
         sheet = load_workbook(file_name).active
