@@ -1,5 +1,5 @@
 # WorkWithPythonDict
-Load data from xlsx (excel) and csv to python dictionary
+Load data from xls, xlsx, xlsm (excel) and csv to python dictionary
 
 Save python dictionary to xlsx (excel) and csv
 
@@ -10,8 +10,8 @@ from LoadDictFromFile import LoadDictFromFile
 from SaveDictToFile import SaveDictToFile
 
 if __name__ == '__main__':
-    old_data = LoadDictFromFile.xlsx_import(filename='old.xlsx', maincolumn='name')
-    new_data = LoadDictFromFile.xlsx_import(filename='new.xlsx', maincolumn='name')
+    old_data = LoadDictFromFile.load(filename='old.xlsx', maincolumn='name')
+    new_data = LoadDictFromFile.load(filename='new.xlsx', maincolumn='name')
 
     lost = {}
     same = {}
