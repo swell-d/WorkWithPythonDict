@@ -29,9 +29,10 @@ class TextCorrections:
 
     @staticmethod
     def get_cache_path(url, short=False, cache_path='C:\\Users\\Administrator\\Documents\\_python\\_cache\\'):
+        if cache_path[-1] != '\\': cache_path += '\\'
         file_name = url[url.find("//") + 2:].replace('..', '').replace('/', '\\')
         if short and '?' in file_name: file_name = file_name[:file_name.rfind("?")]
-        file_name = quote(file_name)
+        file_name = '\\'.join([quote(part) for part in file_name.split('\\')])
         if file_name[-1] == '\\': file_name += 'html.html'
         if '\\' not in file_name: file_name += '\\html.html'
         right_part = file_name[file_name.rfind('\\'):]
