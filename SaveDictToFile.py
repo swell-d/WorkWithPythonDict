@@ -14,9 +14,6 @@ from GlobalFunctions import print_run_time
 
 
 class SaveDictToFile:
-    __SEPARATOR = ','  # for csv only
-    __QUOTECHAR = '"'
-    __NEWLINE = '\r\n'
     __DATE = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
 
     @classmethod
@@ -38,16 +35,17 @@ class SaveDictToFile:
             if not isinstance(each, dict): raise ValueError('Wrong data')
             for key, value in each.items():
                 if value != '' and key not in new_fieldnames: new_fieldnames.append(str(key))
-        additional_fields = [str(x) for x in new_fieldnames if x not in fieldnames]
-        cleared_fields = [str(x) for x in fieldnames if x not in new_fieldnames]
+        if '#' in new_fieldnames: new_fieldnames.remove('#')
+        additional_fields = [x for x in new_fieldnames if x not in fieldnames]
+        cleared_fields = [x for x in fieldnames if x not in new_fieldnames]
         if cleared_fields: print('deleted columns: ' + ', '.join(cleared_fields))
-        return [str(x) for x in fieldnames if x in new_fieldnames] + additional_fields
+        return [x for x in fieldnames if x in new_fieldnames] + additional_fields
 
     @classmethod
     def __enhancement(cls, ws):
         def auto_column_width():
             dims = {}
-            for row in ws.rows:
+            for row in ws.iter_rows():
                 for cell in row:
                     dims[cell.column_letter] = max((dims.get(cell.column_letter, 1), len(str(cell.value))))
             for col, value in dims.items():
@@ -83,23 +81,21 @@ class SaveDictToFile:
     @classmethod
     @print_run_time
     def save_to_csv(cls, data, filename='', fieldnames=None, optimize=False, open=False):
+        SEP, QC, NL = ',', '"', '\r\n'  # separator, quote char, new line
         data, fieldnames = cls.__init(data, filename, fieldnames)
         newfilename = f'{cls.__DATE}_{filename}.csv'
         with codecs.open(newfilename, 'w', encoding='utf-8') as file:
-            file.write(f'{cls.__QUOTECHAR}#{cls.__QUOTECHAR}' +
-                       cls.__SEPARATOR +
-                       cls.__SEPARATOR.join([f'{cls.__QUOTECHAR}{x}{cls.__QUOTECHAR}' for x in fieldnames]) +
-                       cls.__NEWLINE)
+            fieldnames.insert(0, '#')
+            file.write(SEP.join([f'{QC}{x}{QC}' for x in fieldnames]) + NL)
             i = -1
             for i, each in enumerate(data.values() if isinstance(data, dict) else data):
                 line = [i + 1]
-                for key in fieldnames:
+                for key in fieldnames[1:]:
                     value = each.get(key, '')
                     if isinstance(value, float): value = str(value).replace('.', ',')
                     value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                     line.append(value.replace('"', '""'))
-                file.write(cls.__SEPARATOR.join([f'{cls.__QUOTECHAR}{x}{cls.__QUOTECHAR}' for x in line]) +
-                           cls.__NEWLINE)
+                file.write(SEP.join([f'{QC}{x}{QC}' for x in line]) + NL)
         print(f"{newfilename} / {i + 1} lines saved / ", end='')
         if open: os.startfile(newfilename)
         return newfilename

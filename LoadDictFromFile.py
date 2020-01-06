@@ -13,8 +13,6 @@ from GlobalFunctions import print_run_time
 
 
 class LoadDictFromFile:
-    __SEPARATOR = ','
-    __QUOTECHAR = '"'
     __optimize, __recognize = None, None
 
     @classmethod
@@ -63,7 +61,7 @@ class LoadDictFromFile:
         cls.__optimize, cls.__recognize = optimize, recognize
         imports = {}
         with codecs.open(filename, 'r', encoding='utf-8') as file:
-            reader = csv.reader(file, delimiter=cls.__SEPARATOR, quotechar=cls.__QUOTECHAR)
+            reader = csv.reader(file, delimiter=',', quotechar='"')
             data = [row for row in reader]
         titles = cls.__titles(data[0], language)
         index = cls.__find_index(maincolumn, titles)

@@ -18,17 +18,17 @@ class CheckTypes:
 
 
 class CheckTypesRe(CheckTypes):
-    int_compile = re.compile(r"^0$|^-?[1-9]\d*$")
-    float_compile = re.compile(r"^0$|^-?0[.]\d+$|^-?[1-9]\d*([.]\d+)?$")
+    __int_compile = re.compile("^0$|^-?[1-9]\\d*$")
+    __float_compile = re.compile("^0$|^-?0[.]\\d+$|^-?[1-9]\\d*([.]\\d+)?$")
 
     @classmethod
     def isint(cls, text):
-        return True if re.match(cls.int_compile, str(text)) else False
+        return True if re.match(cls.__int_compile, str(text)) else False
 
     @classmethod
     def isfloat(cls, text):
         if len(str(text)) > 17: return False
-        return True if re.match(cls.float_compile, str(text)) else False
+        return True if re.match(cls.__float_compile, str(text)) else False
 
 
 class CheckTypesTry(CheckTypes):
@@ -62,7 +62,7 @@ class CheckTypesTest(unittest.TestCase):
         good_values = ['-1', '0', '1', '-1.0', '1.0', '-0.1', '0.1', '911', '0.001']
         bad_values = ['', ' ', '-', '+', '00', '01', '0123', '-0', '-00', '-01', '-0123',
                       '00.0', '01.', '-01.', '.1', '-.1', '1-', ' 1', '1 ', '-001',
-                      '0.1.1', '1..1', '0..1']
+                      '0.1.1', '1..1', '0..1', '23.3.4']
         for val in good_values:
             self.assertTrue(cl.isfloat(val), msg=val)
         for val in bad_values:
