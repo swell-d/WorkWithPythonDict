@@ -1,12 +1,23 @@
+import codecs
 import os
 import pathlib
+import time
 from urllib.parse import quote
 
+import requests
 from PIL import Image, ImageDraw, ImageFont
+from selenium import webdriver
 
+from GlobalFunctions import SwPrint
 from TextCorrections import TextCorrections as sw
 from parsing_classes import Category
 from parsing_classes import Product
+
+driver = None
+
+
+def print(text, only_debug=False, end='\n'):
+    SwPrint.print(text, only_debug, end)
 
 
 class Parsing:
@@ -77,15 +88,8 @@ class Parsing:
         data['country_of_manufacture'] = country  # DE #US #ES #JP
         data['websites'] = websites  # 'base'
 
-        # same for all
-        url_key = f"{data['manufacturer']}_{data['herstellernummer']}".strip('_').lower()
-        url_key = url_key.replace('/', '-').replace('\\', '-').replace(' ', '-').replace('+', '-').replace('.', '-')
-        data['url_key'] = quote(url_key)
-        data['status'] = 1
-        data['qty'] = 1000
-        data['is_in_stock'] = 1
-        data['tax_class_id'] = 'Vollbesteuerte Artikel' if lang != 'ru' else ''
-        data['attribute_set_name'] = 'Default' if lang != 'ru' else ''
+        Parsing.same_for_all(data, lang)
+        Parsing.minimalka(data)
 
         # additional
         # data['special_price'] = ''
@@ -95,3 +99,140 @@ class Parsing:
         # data['relation'] = ''  # через ||
 
         return data
+
+    @staticmethod
+    def same_for_all(data, lang):
+        url_key = f"{data['manufacturer']}_{data['herstellernummer']}".strip('_').lower()
+        url_key = url_key.replace('/', '-').replace('\\', '-').replace(' ', '-').replace('+', '-').replace('.', '-')
+        data['url_key'] = quote(url_key)
+        data['status'] = 1
+        data['qty'] = 1000
+        data['is_in_stock'] = 1
+        data['tax_class_id'] = 'Vollbesteuerte Artikel' if lang != 'ru' else ''
+        data['attribute_set_name'] = 'Default' if lang != 'ru' else ''
+
+    @staticmethod
+    def minimalka(data):
+        min_count = int(data.get('qty_increments', 1))
+        data['enable_qty_increments'] = 1 if min_count > 1 else 0
+        data['use_config_enable_qty_inc'] = 0 if min_count > 1 else 1
+        data['qty_increments'] = min_count
+        data['use_config_qty_increments'] = 0 if min_count > 1 else 1
+
+    @staticmethod
+    def reorganize_categories(lang):
+        ### работаем с категориями
+        col = 1
+        new_cat_name = None
+        print(f'всего {Category.count() / col} категорий')
+        while True:
+            a, b = 0, 0
+            for each in list(Category.categories.values()).copy():
+                if str(each).count('|') < 3: continue
+                ### удаляем папки с количеством товаров меньше 3
+                if each.children_categories_count == 0 and each.children_products_count < 3:
+                    each.delete()
+                    a += 1
+                ### удаляем промежуточные папки без товаров
+                elif each.children_categories_count == 1 and each.children_products_count == 0:
+                    each.delete()
+                    b += 1
+            if a or b: print(f'удалено {a / col}+{b / col} категорий')
+            if (a + b) == 0: break
+        print(f'всего {Category.count() // col} категорий')
+        ### перемещаем "промежуточные" товары в новую папку Other
+        c = 0
+        for each in list(Category.categories.values()).copy():
+            if each.children_categories_count > 0 and each.children_products_count > 0:
+                if lang == 'de':
+                    new_cat_name = 'Zubehör'
+                elif lang == 'en':
+                    new_cat_name = 'Other'
+                elif lang == 'ru':
+                    new_cat_name = 'Прочее'
+                new_cat = Category.create_category(f'{each}|{new_cat_name}')
+                for child in each.find_children(show_cats=False, show_products=True, text=False):
+                    child.move(each, new_cat)
+                c += 1
+        if new_cat_name:
+            print(f'создано {c // col} новых категорий {new_cat_name}. итого {Category.count() // col} категорий')
+
+    @staticmethod
+    def get_htmls(url, simple=False):  # скачиваем страницу. если уже скачана, берём сохранённую копию
+        result = []
+        file_name = sw.get_cache_path(url)
+        if os.path.exists(file_name):
+            print(f'use exist  {url}', only_debug=True)
+            with codecs.open(file_name, 'r', 'utf-8') as file:
+                html = file.read()
+            result.append(html)
+            i = 1
+            while True:
+                file_name_dop = f'{file_name}_{i + 1}.html'
+                if os.path.exists(file_name_dop):
+                    print(f'use exist dop  {file_name_dop}', only_debug=True)
+                    i += 1
+                    with codecs.open(file_name_dop, 'r', 'utf-8') as file:
+                        html = file.read()
+                    result.append(html)
+                else:
+                    break
+            return result
+        else:
+            print(f'download  {url}')
+            if simple:
+                try:
+                    html = requests.get(url)
+                except:
+                    try:
+                        html = requests.get(url)
+                    except:
+                        print(f'=== ошибка скачивания  {url}')
+                        return result
+                if html.status_code == 404:
+                    print(f'=== 404  {url}')
+                    return result
+                html.encoding = 'utf-8'
+                html = html.text
+
+                pathlib.Path(file_name[:file_name.rfind('/')]).mkdir(parents=True, exist_ok=True)
+                with codecs.open(file_name, 'w', 'utf-8') as f:
+                    f.write(html)
+                result.append(html)
+            else:
+                global driver
+                if not driver:
+                    chrome_options = webdriver.ChromeOptions()
+                    chrome_options.add_argument("--start-maximized")
+                    prefs = {"profile.managed_default_content_settings.images": 2}
+                    chrome_options.add_experimental_option("prefs", prefs)
+
+                    driver = webdriver.Chrome('../chromedriver.exe', chrome_options=chrome_options)
+                    driver.implicitly_wait(10)
+                    driver.get(url)  ###
+                    input('продолжить?')
+                    print('дальше')
+                try:
+                    driver.get(url)
+                except:
+                    try:
+                        driver.get(url)
+                    except:
+                        print(f'=== ошибка скачивания  {url}')
+                        return result
+                time.sleep(1)
+                html = driver.page_source
+
+                pathlib.Path(file_name[:file_name.rfind('/')]).mkdir(parents=True, exist_ok=True)
+                with codecs.open(file_name, 'w', 'utf-8') as f:
+                    f.write(html)
+                result.append(html)
+
+            return result
+
+    @staticmethod
+    def delete_file(url):
+        file_name = sw.get_cache_path(url)
+        if os.path.exists(file_name):
+            os.remove(file_name)
+            print(f'=== delete file  {url}')
