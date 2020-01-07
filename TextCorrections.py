@@ -32,12 +32,12 @@ class TextCorrections:
         if cache_path[-1] != '\\': cache_path += '\\'
         file_name = url[url.find("//") + 2:].replace('..', '').replace('/', '\\')
         if short and '?' in file_name: file_name = file_name[:file_name.rfind("?")]
-        file_name = '\\'.join([quote(part) for part in file_name.split('\\')])
+        file_name = quote(file_name, safe='\\')
         if file_name[-1] == '\\': file_name += 'html.html'
         if '\\' not in file_name: file_name += '\\html.html'
         right_part = file_name[file_name.rfind('\\'):]
         if '.' not in right_part: file_name += '.html'
-        return cache_path + file_name
+        return re.sub('\\\\+', '\\\\', cache_path + file_name)
 
     @staticmethod
     def fuck_rus_letters(text):
@@ -137,7 +137,7 @@ class FindDigits:
         self.__float_compile = re.compile(
             f"{self.__SS}(0){self.__SS}|{self.__SS}(-?0[{point}]\\d+){self.__SS}|{self.__SS}(-?[1-9]\\d*([{point}]\\d+)?){self.__SS}")
 
-    def find_digits(self, text):
+    def find_floats(self, text):
         findall = re.findall(self.__float_compile, f" {str(text)} ")
         result = []
         for each in findall: result.append(float((each[2] or each[1] or each[0]).replace(',', '.')))
@@ -168,11 +168,10 @@ class Html:
 
     @staticmethod
     def div_youtube(video_link):
-        if video_link:
-            return f'<iframe width="800" height="450" src="https://www.youtube-nocookie.com/embed/{video_link}" ' \
-                   f'frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" ' \
-                   f'allowfullscreen></iframe><br><br>'
-        return ''
+        if not video_link: return ''
+        return f'<iframe width="800" height="450" src="https://www.youtube-nocookie.com/embed/{video_link}" ' \
+               f'frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" ' \
+               f'allowfullscreen></iframe><br><br>'
 
 
 class TextCorrectionsTests(unittest.TestCase):
@@ -192,47 +191,47 @@ class TextCorrectionsTests(unittest.TestCase):
 
     def test_digits(self):
         obj = FindDigits()
-        self.assertEqual('', obj.find_digits('')[0])
-        self.assertEqual('', obj.find_digits(' ')[0])
-        self.assertEqual('', obj.find_digits('abc')[0])
-        self.assertEqual(0, obj.find_digits(0)[0])
+        self.assertEqual('', obj.find_floats('')[0])
+        self.assertEqual('', obj.find_floats(' ')[0])
+        self.assertEqual('', obj.find_floats('abc')[0])
+        self.assertEqual(0, obj.find_floats(0)[0])
 
-        self.assertEqual(0, obj.find_digits('0')[0])
-        self.assertEqual(0, obj.find_digits('a0b')[0])
-        self.assertEqual(0, obj.find_digits('<b>0</b>')[0])
-        self.assertEqual(0, obj.find_digits('a 0 b')[0])
+        self.assertEqual(0, obj.find_floats('0')[0])
+        self.assertEqual(0, obj.find_floats('a0b')[0])
+        self.assertEqual(0, obj.find_floats('<b>0</b>')[0])
+        self.assertEqual(0, obj.find_floats('a 0 b')[0])
 
-        self.assertEqual(1, obj.find_digits('1')[0])
-        self.assertEqual(1, obj.find_digits('a1b')[0])
-        self.assertEqual(1, obj.find_digits('<b>1</b>')[0])
-        self.assertEqual(1, obj.find_digits('a 1 b')[0])
+        self.assertEqual(1, obj.find_floats('1')[0])
+        self.assertEqual(1, obj.find_floats('a1b')[0])
+        self.assertEqual(1, obj.find_floats('<b>1</b>')[0])
+        self.assertEqual(1, obj.find_floats('a 1 b')[0])
 
-        self.assertEqual(-1, obj.find_digits('-1')[0])
-        self.assertEqual(-1, obj.find_digits('a-1b')[0])
-        self.assertEqual(-1, obj.find_digits('<b>-1</b>')[0])
-        self.assertEqual(-1, obj.find_digits('a -1 b')[0])
+        self.assertEqual(-1, obj.find_floats('-1')[0])
+        self.assertEqual(-1, obj.find_floats('a-1b')[0])
+        self.assertEqual(-1, obj.find_floats('<b>-1</b>')[0])
+        self.assertEqual(-1, obj.find_floats('a -1 b')[0])
 
-        self.assertEqual(0.1, obj.find_digits('0.1')[0])
-        self.assertEqual(0.1, obj.find_digits('a0.1b')[0])
-        self.assertEqual(0.1, obj.find_digits('<b>0.1</b>')[0])
-        self.assertEqual(0.1, obj.find_digits('a 0.1 b')[0])
+        self.assertEqual(0.1, obj.find_floats('0.1')[0])
+        self.assertEqual(0.1, obj.find_floats('a0.1b')[0])
+        self.assertEqual(0.1, obj.find_floats('<b>0.1</b>')[0])
+        self.assertEqual(0.1, obj.find_floats('a 0.1 b')[0])
 
-        self.assertEqual(-0.1, obj.find_digits('-0.1')[0])
-        self.assertEqual(-0.1, obj.find_digits('a-0.1b')[0])
-        self.assertEqual(-0.1, obj.find_digits('<b>-0.1</b>')[0])
-        self.assertEqual(-0.1, obj.find_digits('a -0.1 b')[0])
+        self.assertEqual(-0.1, obj.find_floats('-0.1')[0])
+        self.assertEqual(-0.1, obj.find_floats('a-0.1b')[0])
+        self.assertEqual(-0.1, obj.find_floats('<b>-0.1</b>')[0])
+        self.assertEqual(-0.1, obj.find_floats('a -0.1 b')[0])
 
-        self.assertEqual(1, obj.find_digits('1 23.3.45 234.567')[0])
-        self.assertEqual(234.567, obj.find_digits('1 23.3.45 234.567')[1])
+        self.assertEqual(1, obj.find_floats('1 23.3.45 234.567')[0])
+        self.assertEqual(234.567, obj.find_floats('1 23.3.45 234.567')[1])
 
-        self.assertEqual(1, obj.find_digits('1ab23.3,45cd234,567ef123')[0])
-        self.assertEqual(234.567, obj.find_digits('1ab23.3,45cd234,567ef123')[1])
-        self.assertEqual(123, obj.find_digits('1ab23.3,45cd234,567ef123')[2])
+        self.assertEqual(1, obj.find_floats('1ab23.3,45cd234,567ef123')[0])
+        self.assertEqual(234.567, obj.find_floats('1ab23.3,45cd234,567ef123')[1])
+        self.assertEqual(123, obj.find_floats('1ab23.3,45cd234,567ef123')[2])
 
-        self.assertEqual(234.567, obj.find_digits('<b>234.567</b>123')[0])
-        self.assertEqual(123, obj.find_digits('<b>234.567</b>123')[1])
+        self.assertEqual(234.567, obj.find_floats('<b>234.567</b>123')[0])
+        self.assertEqual(123, obj.find_floats('<b>234.567</b>123')[1])
 
-        self.assertEqual('', obj.find_digits('1-2')[0])
+        self.assertEqual('', obj.find_floats('1-2')[0])
 
 
 if __name__ == '__main__':
