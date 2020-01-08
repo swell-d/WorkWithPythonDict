@@ -147,37 +147,40 @@ class LoadDictFromFileTests(unittest.TestCase):
                             '2': {'#': 2, 'first': '', 'second': 12345678901234567890, 'third': '"4""4'}}
 
     def test_csv_import(self):
-        test_dict = LoadDictFromFile.load('test_import.csv', maincolumn='#', recognize=True)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.csv', maincolumn='#', recognize=True)
         self.assertEqual(self.__data_csv, test_dict)
-        test_dict2 = LoadDictFromFile.load('test_import.csv', maincolumn='#', optimize=True, recognize=True)
+        test_dict2 = LoadDictFromFile.load('files_for_tests/test_import.csv', maincolumn='#', optimize=True,
+                                           recognize=True)
         self.assertEqual(self.__data_optimized_csv, test_dict2)
-        test_dict3 = LoadDictFromFile.load('test_import.csv', recognize=True)
+        test_dict3 = LoadDictFromFile.load('files_for_tests/test_import.csv', recognize=True)
         self.assertEqual(self.__data_csv, test_dict3)
-        test_dict4 = LoadDictFromFile.load('test_import.csv', optimize=True, recognize=True)
+        test_dict4 = LoadDictFromFile.load('files_for_tests/test_import.csv', optimize=True, recognize=True)
         self.assertEqual(self.__data_optimized_csv, test_dict4)
 
     def test_xls_import(self):
-        test_dict1 = LoadDictFromFile.load('test_import.xls', maincolumn='#', recognize=True)
+        test_dict1 = LoadDictFromFile.load('files_for_tests/test_import.xls', maincolumn='#', recognize=True)
         self.assertEqual(self.__data_xls, test_dict1)
-        test_dict2 = LoadDictFromFile.load('test_import.xls', maincolumn='#', optimize=True, recognize=True)
+        test_dict2 = LoadDictFromFile.load('files_for_tests/test_import.xls', maincolumn='#', optimize=True,
+                                           recognize=True)
         self.assertEqual(self.__data_optimized_xls, test_dict2)
         # test_dict3 = LoadDictFromFile.load('test_import.xls', recognize=True)
         # self.assertEqual(self.__data_xls, test_dict3)
         # test_dict4 = LoadDictFromFile.load('test_import.xls', optimize=True, recognize=True)
         # self.assertEqual(self.__data_optimized_xls, test_dict4)
-        test_dict5 = LoadDictFromFile.load('test_import.xls', maincolumn='#', recognize=False)
+        test_dict5 = LoadDictFromFile.load('files_for_tests/test_import.xls', maincolumn='#', recognize=False)
         self.assertEqual(self.__data_xls_not_recognized, test_dict5)
 
     def test_xlsx_import(self):
-        test_dict1 = LoadDictFromFile.load('test_import.xlsx', maincolumn='#', recognize=True)
+        test_dict1 = LoadDictFromFile.load('files_for_tests/test_import.xlsx', maincolumn='#', recognize=True)
         self.assertEqual(self.__data_xlsx, test_dict1)
-        test_dict2 = LoadDictFromFile.load('test_import.xlsx', maincolumn='#', optimize=True, recognize=True)
+        test_dict2 = LoadDictFromFile.load('files_for_tests/test_import.xlsx', maincolumn='#', optimize=True,
+                                           recognize=True)
         self.assertEqual(self.__data_optimized_xlsx, test_dict2)
-        test_dict3 = LoadDictFromFile.load('test_import.xlsx', recognize=True)
+        test_dict3 = LoadDictFromFile.load('files_for_tests/test_import.xlsx', recognize=True)
         self.assertEqual(self.__data_xlsx, test_dict3)
-        test_dict4 = LoadDictFromFile.load('test_import.xlsx', optimize=True, recognize=True)
+        test_dict4 = LoadDictFromFile.load('files_for_tests/test_import.xlsx', optimize=True, recognize=True)
         self.assertEqual(self.__data_optimized_xlsx, test_dict4)
-        test_dict5 = LoadDictFromFile.load('test_import.xlsx', maincolumn='#', recognize=False)
+        test_dict5 = LoadDictFromFile.load('files_for_tests/test_import.xlsx', maincolumn='#', recognize=False)
         self.assertEqual(self.__data_xlsx_not_recognized, test_dict5)
 
     def test_csv_in_and_out(self):

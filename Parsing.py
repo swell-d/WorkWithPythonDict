@@ -6,14 +6,18 @@ from urllib.parse import quote
 
 import requests
 from PIL import Image, ImageDraw, ImageFont
+from fake_useragent import UserAgent
 from selenium import webdriver
 
-from GlobalFunctions import SwPrint
+from SwPrint import SwPrint
 from TextCorrections import TextCorrections as sw
 from parsing_classes import Category
 from parsing_classes import Product
 
-driver = None
+
+# from selenium.webdriver.support.ui import Select, WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# from selenium.webdriver.common.by import By
 
 
 def print(text, only_debug=False, end='\n'):
@@ -21,6 +25,9 @@ def print(text, only_debug=False, end='\n'):
 
 
 class Parsing:
+    _driver = None
+    _ua = UserAgent()
+
     @staticmethod
     def check_sku(sku, url, good_symbols=' .-+/'):
         if not sku:
@@ -157,78 +164,86 @@ class Parsing:
         if new_cat_name:
             print(f'создано {c // col} новых категорий {new_cat_name}. итого {Category.count() // col} категорий')
 
-    @staticmethod
-    def get_htmls(url, simple=False):  # скачиваем страницу. если уже скачана, берём сохранённую копию
+    @classmethod
+    def get_htmls(cls, url, simple=False):  # скачиваем страницу. если уже скачана, берём сохранённую копию
         result = []
         file_name = sw.get_cache_path(url)
         if os.path.exists(file_name):
             print(f'use exist  {url}', only_debug=True)
-            with codecs.open(file_name, 'r', 'utf-8') as file:
-                html = file.read()
-            result.append(html)
+            result.append(cls.read_file(file_name))
             i = 1
             while True:
                 file_name_dop = f'{file_name}_{i + 1}.html'
-                if os.path.exists(file_name_dop):
-                    print(f'use exist dop  {file_name_dop}', only_debug=True)
-                    i += 1
-                    with codecs.open(file_name_dop, 'r', 'utf-8') as file:
-                        html = file.read()
-                    result.append(html)
-                else:
-                    break
-            return result
+                if not os.path.exists(file_name_dop): break
+                print(f'use exist dop  {file_name_dop}', only_debug=True)
+                result.append(cls.read_file(file_name_dop))
+                i += 1
         else:
             print(f'download  {url}')
             if simple:
-                try:
-                    html = requests.get(url)
-                except:
-                    try:
-                        html = requests.get(url)
-                    except:
-                        print(f'=== ошибка скачивания  {url}')
-                        return result
-                if html.status_code == 404:
-                    print(f'=== 404  {url}')
-                    return result
-                html.encoding = 'utf-8'
-                html = html.text
-
-                pathlib.Path(file_name[:file_name.rfind('/')]).mkdir(parents=True, exist_ok=True)
-                with codecs.open(file_name, 'w', 'utf-8') as f:
-                    f.write(html)
-                result.append(html)
+                result.append(cls.get_simple_html(url, file_name))
             else:
-                global driver
-                if not driver:
-                    chrome_options = webdriver.ChromeOptions()
-                    chrome_options.add_argument("--start-maximized")
-                    prefs = {"profile.managed_default_content_settings.images": 2}
-                    chrome_options.add_experimental_option("prefs", prefs)
+                result.append(cls.get_htmls_from_webdriver(url, file_name))
+        return result
 
-                    driver = webdriver.Chrome('../chromedriver.exe', chrome_options=chrome_options)
-                    driver.implicitly_wait(10)
-                    driver.get(url)  ###
-                    input('продолжить?')
-                    print('дальше')
-                try:
-                    driver.get(url)
-                except:
-                    try:
-                        driver.get(url)
-                    except:
-                        print(f'=== ошибка скачивания  {url}')
-                        return result
-                time.sleep(1)
-                html = driver.page_source
+    @classmethod
+    def create_web_driver(cls, url):
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument("--start-maximized")
+        prefs = {"profile.managed_default_content_settings.images": 2}
+        chrome_options.add_experimental_option("prefs", prefs)
+        cls._driver = webdriver.Chrome('C:\\Users\\Administrator\\Documents\\_python\\chromedriver.exe',
+                                       chrome_options=chrome_options)
+        cls._driver.implicitly_wait(10)
+        cls._driver.get(url)
+        input('продолжить?')
+        print('дальше')
 
-                pathlib.Path(file_name[:file_name.rfind('/')]).mkdir(parents=True, exist_ok=True)
-                with codecs.open(file_name, 'w', 'utf-8') as f:
-                    f.write(html)
-                result.append(html)
+    @staticmethod
+    def read_file(file_name):
+        with codecs.open(file_name, 'r', 'utf-8') as file:
+            return file.read()
 
-            return result
+    @staticmethod
+    def save_text_to_file(file_name, text):
+        pathlib.Path(file_name[:file_name.rfind('\\')]).mkdir(parents=True, exist_ok=True)
+        with codecs.open(file_name, 'w', 'utf-8') as f:
+            f.write(text)
+
+    @classmethod
+    def get_simple_html(cls, url, file_name):
+        headers = {'User-Agent': cls._ua.chrome}
+        try:
+            html = requests.get(url, headers=headers)
+        except:
+            try:
+                html = requests.get(url, headers=headers)
+            except:
+                print(f'=== ошибка скачивания  {url}')
+                return ''
+        if html.status_code == 404:
+            print(f'=== 404  {url}')
+            return ''
+        html.encoding = 'utf-8'
+        html_text = html.text
+        cls.save_text_to_file(file_name, html_text)
+        return html_text
+
+    @classmethod
+    def get_htmls_from_webdriver(cls, url, file_name):
+        if not cls._driver: cls.create_web_driver(url)
+        try:
+            cls._driver.get(url)
+        except:
+            try:
+                cls._driver.get(url)
+            except:
+                print(f'=== ошибка скачивания  {url}')
+                return ''
+        time.sleep(1)
+        html_text = cls._driver.page_source
+        cls.save_text_to_file(file_name, html_text)
+        return html_text
 
     @staticmethod
     def delete_file(url):
@@ -236,3 +251,5 @@ class Parsing:
         if os.path.exists(file_name):
             os.remove(file_name)
             print(f'=== delete file  {url}')
+        else:
+            print(f'=== file not found  {url}')
