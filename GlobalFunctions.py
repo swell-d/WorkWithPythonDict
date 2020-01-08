@@ -1,6 +1,8 @@
 import functools
 import time
 
+from SwPrint import SwPrint
+
 
 def print_run_time(func):
     @functools.wraps(func)
@@ -11,3 +13,7 @@ def print_run_time(func):
         return result
 
     return wrapper
+
+
+def print(text, only_debug=False, end='\n'):
+    SwPrint.print(text, only_debug, end)

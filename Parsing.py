@@ -11,6 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 from fake_useragent import UserAgent
 from selenium import webdriver
 
+from GlobalFunctions import print, print_run_time
 from SwPrint import SwPrint
 from TextCorrections import TextCorrections as sw
 from parsing_classes import Category
@@ -20,10 +21,6 @@ from parsing_classes import Product
 # from selenium.webdriver.support.ui import Select, WebDriverWait
 # from selenium.webdriver.support import expected_conditions as EC
 # from selenium.webdriver.common.by import By
-
-
-def print(text, only_debug=False, end='\n'):
-    SwPrint.print(text, only_debug, end)
 
 
 class Parsing:
@@ -44,11 +41,11 @@ class Parsing:
                 return False
         return True
 
-    @staticmethod
-    def create_simple_product(sku, addon, brand, lieferant, name, lang,
+    @classmethod
+    def create_simple_product(cls, sku, addon, brand, lieferant, name, lang,
                               category_ids, price, am_shipping_type, country, websites, good_symbols=' .-+/'):
         sku = sw.clr(sku).strip(' .,')
-        if not Parsing.check_sku(sku, url='simple_product', good_symbols=good_symbols): return None
+        if not cls.check_sku(sku, url='simple_product', good_symbols=good_symbols): return None
         addon = sw.clr(addon).upper()
         brand = sw.clr(brand, frst_bg=True)
         name = sw.clr(name, frst_bg=True).strip(' .,')
@@ -62,7 +59,7 @@ class Parsing:
         data['name'] = sw.clr(f"{brand} {sku}. {name}").strip(' .,')
         data['short_description'] = name
         data['description'] = name
-        Parsing.get_logo_with_sku(data, path=f'images_{lang}')
+        cls.get_logo_with_sku(data, path=f'images_{lang}')
         data['category_ids'] = category_ids
         for each_cat in data['category_ids'].split('||'):
             cat = Category.create_category(each_cat, None)
@@ -74,8 +71,8 @@ class Parsing:
         data['country_of_manufacture'] = country  # DE #US #ES #JP
         data['websites'] = websites  # 'base'
 
-        Parsing.same_for_all(data, lang)
-        Parsing.minimalka(data)
+        cls.same_for_all(data, lang)
+        cls.minimalka(data)
 
         # additional
         # data['special_price'] = ''
@@ -144,8 +141,7 @@ class Parsing:
             print(f'создано {c // col} новых категорий {new_cat_name}. итого {Category.count() // col} категорий')
 
     @classmethod
-    def get_htmls_from_web_or_cache(cls, url,
-                                    simple=False):  # скачиваем страницу. если уже скачана, берём сохранённую копию
+    def get_htmls_from_web(cls, url, simple=False, additional_func=None):
         result = []
         file_name = sw.get_cache_path(url)
         if os.path.exists(file_name):
@@ -163,7 +159,7 @@ class Parsing:
             if simple:
                 result.append(cls.get_simple_html(url, file_name))
             else:
-                result.append(cls.get_htmls_from_webdriver(url, file_name))
+                result.append(cls.get_htmls_from_webdriver(url, file_name, additional_func))
         return result
 
     @classmethod
@@ -215,7 +211,7 @@ class Parsing:
         return page.text
 
     @classmethod
-    def get_htmls_from_webdriver(cls, url, file_name):
+    def get_htmls_from_webdriver(cls, url, file_name, additional_func=None):
         if not cls._driver: cls._create_web_driver(url)
         try:
             cls._driver.get(url)
@@ -227,12 +223,14 @@ class Parsing:
                 return ''
         time.sleep(1)
         html_text = cls._driver.page_source
-        # Todo additional code specific for web-site
+        if additional_func is not None:
+            additional_func(cls._driver)
+            html_text = cls._driver.page_source
         cls.save_text_to_file(file_name, html_text)
         return html_text
 
     @classmethod
-    def get_file_from_web_or_cache(cls, url, name, path='images'):
+    def get_file_from_web(cls, url, name, path='images'):
         if not name: name = unquote(url[url.rfind('/') + 1:url.rfind('.')])
         name = sw.good_name(name)
         cache_path = sw.get_cache_path(url)
@@ -273,18 +271,18 @@ class Parsing:
         sku = data['herstellernummer']
         for link in imgs:
             if not data.get('image'):
-                data['image'] = cls.get_file_from_web_or_cache(link, f'{brand}_{sku}', path)
+                data['image'] = cls.get_file_from_web(link, f'{brand}_{sku}', path)
                 data['image'] = data['image'].replace('png', 'jpg').replace('gif', 'jpg').replace('jpeg', 'jpg')
                 if not data['image']: continue
                 data['small_image'] = data['image']
                 data['thumbnail'] = data['image']
                 data['media_gallery'] = data['image']
             else:
-                next_img = cls.get_file_from_web_or_cache(link, f'{brand}_{sku}_{i + 1}', path)
+                next_img = cls.get_file_from_web(link, f'{brand}_{sku}_{i + 1}', path)
                 if not next_img: continue
                 i += 1
                 data['media_gallery'] += f'|{next_img}'
-        if not data.get('image'): Parsing.get_logo_with_sku(data, path)
+        if not data.get('image'): cls.get_logo_with_sku(data, path)
 
     @classmethod
     def get_logo_with_sku(cls, data, path='images'):
@@ -317,3 +315,23 @@ class Parsing:
             print(f'=== delete file  {url}')
         else:
             print(f'=== file not found  {url}')
+
+    @classmethod
+    def driver_quit(cls):
+        if cls._driver: cls._driver.quit()
+
+    @classmethod
+    @print_run_time
+    def start_stop_decorator(cls, debug=False):
+        def wrapper1(func):
+            def wrapper2(*args, **kwargs):
+                SwPrint(debug=debug)
+                result = func(*args, **kwargs)
+                print(f'end')
+                cls.driver_quit()
+                SwPrint.save_log_to_file()
+                return result
+
+            return wrapper2
+
+        return wrapper1

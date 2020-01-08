@@ -22,7 +22,7 @@ class SwPrint:
 
     @classmethod
     def save_log_to_file(cls, prj_name='', path='C:\\Users\\Administrator\\Documents\\_python\\_logs\\'):
-        full_path = f'{path}\\{cls.__start_time}_{prj_name}.txt'
+        full_path = f'{path}\\{cls.__start_time}_{prj_name}'.rstrip('_') + '.txt'
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         with codecs.open(full_path, 'w', 'utf-8') as f:
             f.write(cls.__log)
