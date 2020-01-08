@@ -22,10 +22,10 @@ class TextCorrections:
 
     @staticmethod
     def good_name(name):
-        name = name.replace('/', '-').replace('\\', '-').replace(' ', '-').replace('*', '-').lower()
+        name = name.replace('/', '-').replace('\\', '-').replace(' ', '-').replace('*', '-')
         name = name.replace('ä', 'ae').replace('ö', 'oe').replace('ü', 'ue').replace('ß', 'ss')
-        name = name.replace('°', '').replace('+', '-').replace('?', '-').replace('&', '-')
-        return quote(name)
+        name = name.replace('°', '').replace('+', '-').replace('?', '-').replace('&', '-').replace('%20', '_')
+        return quote(name).lower()
 
     @staticmethod
     def get_cache_path(url, short=False, cache_path='C:\\Users\\Administrator\\Documents\\_python\\_cache\\'):
@@ -37,7 +37,7 @@ class TextCorrections:
         if '\\' not in file_name: file_name += '\\html.html'
         right_part = file_name[file_name.rfind('\\'):]
         if '.' not in right_part: file_name += '.html'
-        return re.sub('\\\\+', '\\\\', cache_path + file_name)
+        return re.sub('\\\\+', '\\\\', cache_path + file_name).lower()
 
     @staticmethod
     def fuck_rus_letters(text):

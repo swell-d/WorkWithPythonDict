@@ -2,9 +2,11 @@ import codecs
 import os
 import pathlib
 import time
-from urllib.parse import quote
+from shutil import copyfile
+from urllib.parse import quote, unquote
 
 import requests
+import urllib3
 from PIL import Image, ImageDraw, ImageFont
 from fake_useragent import UserAgent
 from selenium import webdriver
@@ -26,7 +28,7 @@ def print(text, only_debug=False, end='\n'):
 
 class Parsing:
     _driver = None
-    _ua = UserAgent()
+    _headers = {'User-Agent': UserAgent().chrome}
 
     @staticmethod
     def check_sku(sku, url, good_symbols=' .-+/'):
@@ -41,29 +43,6 @@ class Parsing:
                 print(f'=== спец.символы в артикуле  {sku} {url}')
                 return False
         return True
-
-    @classmethod
-    def get_logo_with_sku(cls, data, path='images'):
-        brand = data['manufacturer']
-        sku = data['herstellernummer']
-        data['image'] = cls.generate_img(sku, f'{brand}_{sku}', path)
-        data['small_image'] = data['image']
-        data['thumbnail'] = data['image']
-        data['media_gallery'] = data['image']
-
-    @staticmethod
-    def generate_img(sku, name, path='images'):
-        file_name = f'{sw.good_name(name)}.jpg'
-        full_path = f'{path}\\{file_name}'
-        if os.path.exists(full_path): return file_name
-        print(f'generate img  {sku}')
-        fnt = ImageFont.truetype('C:\Windows\Fonts\Arial.ttf', 60)
-        img = Image.open('logo.png').convert('RGB')
-        d = ImageDraw.Draw(img)
-        d.text((60, 880), sku, fill=0, font=fnt)
-        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
-        img.save(full_path, quality=100, optimize=True, progressive=True)
-        return file_name
 
     @staticmethod
     def create_simple_product(sku, addon, brand, lieferant, name, lang,
@@ -165,7 +144,8 @@ class Parsing:
             print(f'создано {c // col} новых категорий {new_cat_name}. итого {Category.count() // col} категорий')
 
     @classmethod
-    def get_htmls(cls, url, simple=False):  # скачиваем страницу. если уже скачана, берём сохранённую копию
+    def get_htmls_from_web_or_cache(cls, url,
+                                    simple=False):  # скачиваем страницу. если уже скачана, берём сохранённую копию
         result = []
         file_name = sw.get_cache_path(url)
         if os.path.exists(file_name):
@@ -187,7 +167,7 @@ class Parsing:
         return result
 
     @classmethod
-    def create_web_driver(cls, url):
+    def _create_web_driver(cls, url):
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--start-maximized")
         prefs = {"profile.managed_default_content_settings.images": 2}
@@ -211,27 +191,32 @@ class Parsing:
             f.write(text)
 
     @classmethod
-    def get_simple_html(cls, url, file_name):
-        headers = {'User-Agent': cls._ua.chrome}
+    def download(cls, url):
         try:
-            html = requests.get(url, headers=headers)
+            page = requests.get(url, headers=cls._headers)
         except:
+            time.sleep(1)
             try:
-                html = requests.get(url, headers=headers)
+                page = requests.get(url, headers=cls._headers)
             except:
-                print(f'=== ошибка скачивания  {url}')
-                return ''
-        if html.status_code == 404:
-            print(f'=== 404  {url}')
-            return ''
-        html.encoding = 'utf-8'
-        html_text = html.text
-        cls.save_text_to_file(file_name, html_text)
-        return html_text
+                print(f'=== download error  {url}')
+                return None
+        if page.status_code != 200:
+            print(f'=== page status code {page.status_code} for  {url}')
+            return None
+        return page
+
+    @classmethod
+    def get_simple_html(cls, url, file_name):
+        page = cls.download(url)
+        if page is None: return ''
+        page.encoding = 'utf-8'
+        cls.save_text_to_file(file_name, page.text)
+        return page.text
 
     @classmethod
     def get_htmls_from_webdriver(cls, url, file_name):
-        if not cls._driver: cls.create_web_driver(url)
+        if not cls._driver: cls._create_web_driver(url)
         try:
             cls._driver.get(url)
         except:
@@ -242,8 +227,87 @@ class Parsing:
                 return ''
         time.sleep(1)
         html_text = cls._driver.page_source
+        # Todo additional code specific for web-site
         cls.save_text_to_file(file_name, html_text)
         return html_text
+
+    @classmethod
+    def get_file_from_web_or_cache(cls, url, name, path='images'):
+        if not name: name = unquote(url[url.rfind('/') + 1:url.rfind('.')])
+        name = sw.good_name(name)
+        cache_path = sw.get_cache_path(url)
+        file_type = (url[url.rfind('.'):] if '?' not in url else url[url.rfind('.'):url.rfind('?')]).lower()
+        if file_type == '.jpeg': file_type = '.jpg'
+        if len(file_type) > 3 or not file_type: print(f'=== bad file_type in url  {url}')
+        new_path = f'{path}\\{name}{file_type}'
+        if os.path.exists(cache_path) and os.path.exists(new_path):
+            print(f'do nothing  {url}', only_debug=True)
+        elif os.path.exists(cache_path) and not os.path.exists(new_path):
+            if cls._copyfile(url, cache_path, new_path, file_type, path) is None: return ''
+        else:
+            print(f'download file  {url}')
+            urllib3.disable_warnings()
+            page = cls.download(url)
+            if page is None: return ''
+            pathlib.Path(cache_path[:cache_path.rfind('\\')]).mkdir(parents=True, exist_ok=True)
+            with open(cache_path, 'wb') as file:
+                file.write(page.content)
+            if cls._copyfile(url, cache_path, new_path, file_type, path) is None: return ''
+        return new_path.replace(f'{path}\\', '').lower()
+
+    @classmethod
+    def _copyfile(cls, url, cache_path, new_path, file_type, path):
+        statinfo = os.stat(cache_path)
+        if statinfo.st_size == 0: return None  # Todo try to download one more time
+        if 'images' in path and file_type in ['.jpg', '.png', '.gif']:
+            img = Image.open(cache_path)
+            if (img.size[0] + img.size[1]) < 200: return None
+        print(f'copy file  {url}', only_debug=True)
+        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+        copyfile(cache_path, new_path)
+
+    @classmethod
+    def download_imgs(cls, data, imgs, path='images'):
+        i = 1
+        brand = data['manufacturer']
+        sku = data['herstellernummer']
+        for link in imgs:
+            if not data.get('image'):
+                data['image'] = cls.get_file_from_web_or_cache(link, f'{brand}_{sku}', path)
+                data['image'] = data['image'].replace('png', 'jpg').replace('gif', 'jpg').replace('jpeg', 'jpg')
+                if not data['image']: continue
+                data['small_image'] = data['image']
+                data['thumbnail'] = data['image']
+                data['media_gallery'] = data['image']
+            else:
+                next_img = cls.get_file_from_web_or_cache(link, f'{brand}_{sku}_{i + 1}', path)
+                if not next_img: continue
+                i += 1
+                data['media_gallery'] += f'|{next_img}'
+        if not data.get('image'): Parsing.get_logo_with_sku(data, path)
+
+    @classmethod
+    def get_logo_with_sku(cls, data, path='images'):
+        brand = data['manufacturer']
+        sku = data['herstellernummer']
+        data['image'] = cls.generate_img(sku, f'{brand}_{sku}', path)
+        data['small_image'] = data['image']
+        data['thumbnail'] = data['image']
+        data['media_gallery'] = data['image']
+
+    @staticmethod
+    def generate_img(sku, name, path='images'):
+        file_name = f'{sw.good_name(name)}.jpg'
+        full_path = f'{path}\\{file_name}'
+        if os.path.exists(full_path): return file_name
+        print(f'generate img  {sku}')
+        fnt = ImageFont.truetype('C:\Windows\Fonts\Arial.ttf', 60)
+        img = Image.open('logo.png').convert('RGB')
+        d = ImageDraw.Draw(img)
+        d.text((60, 880), sku, fill=0, font=fnt)
+        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+        img.save(full_path, quality=100, optimize=True, progressive=True)
+        return file_name
 
     @staticmethod
     def delete_file(url):
