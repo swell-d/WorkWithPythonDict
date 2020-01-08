@@ -21,6 +21,13 @@ class SwPrint:
         cls.__log += text
 
     @classmethod
+    def print_without_datetime(cls, text, only_debug=False, end='\n'):
+        if not cls.__debug and only_debug: return
+        text = f'{str(text)}{end}'
+        print(text, end='')
+        cls.__log += text
+
+    @classmethod
     def save_log_to_file(cls, prj_name='', path='C:\\Users\\Administrator\\Documents\\_python\\_logs\\'):
         full_path = f'{path}\\{cls.__start_time}_{prj_name}'.rstrip('_') + '.txt'
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)

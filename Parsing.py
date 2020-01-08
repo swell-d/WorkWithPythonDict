@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 from fake_useragent import UserAgent
 from selenium import webdriver
 
-from GlobalFunctions import print, print_run_time
+from GlobalFunctions import print, generate_time_string
 from SwPrint import SwPrint
 from TextCorrections import TextCorrections as sw
 from parsing_classes import Category
@@ -107,7 +107,7 @@ class Parsing:
         ### работаем с категориями
         col = 1
         new_cat_name = None
-        print(f'всего {Category.count() / col} категорий')
+        print(f'всего {Category.count() // col} категорий')
         while True:
             a, b = 0, 0
             for each in list(Category.categories.values()).copy():
@@ -120,7 +120,7 @@ class Parsing:
                 elif each.children_categories_count == 1 and each.children_products_count == 0:
                     each.delete()
                     b += 1
-            if a or b: print(f'удалено {a / col}+{b / col} категорий')
+            if a or b: print(f'удалено {a // col}+{b // col} категорий')
             if (a + b) == 0: break
         print(f'всего {Category.count() // col} категорий')
         ### перемещаем "промежуточные" товары в новую папку Other
@@ -143,7 +143,7 @@ class Parsing:
     @classmethod
     def get_htmls_from_web(cls, url, simple=False, additional_func=None):
         result = []
-        file_name = sw.get_cache_path(url)
+        file_name = sw.get_cache_path(url, html=True)
         if os.path.exists(file_name):
             print(f'use exist  {url}', only_debug=True)
             result.append(cls.read_file(file_name))
@@ -234,9 +234,14 @@ class Parsing:
         if not name: name = unquote(url[url.rfind('/') + 1:url.rfind('.')])
         name = sw.good_name(name)
         cache_path = sw.get_cache_path(url)
-        file_type = (url[url.rfind('.'):] if '?' not in url else url[url.rfind('.'):url.rfind('?')]).lower()
+        right_part = url[url.rfind('/') + 1:]
+        if '?' in right_part: right_part = right_part[:right_part.rfind('?')]
+        file_type = right_part[right_part.rfind('.'):].lower() if '.' in right_part else ''
         if file_type == '.jpeg': file_type = '.jpg'
-        if len(file_type) > 3 or not file_type: print(f'=== bad file_type in url  {url}')
+        if 'treston' in path and not file_type: file_type = '.pdf'
+        if len(file_type) > 4 or not file_type:
+            print(f'=== bad file_type "{file_type}" in url  {url}')
+            raise ValueError
         new_path = f'{path}\\{name}{file_type}'
         if os.path.exists(cache_path) and os.path.exists(new_path):
             print(f'do nothing  {url}', only_debug=True)
@@ -321,12 +326,13 @@ class Parsing:
         if cls._driver: cls._driver.quit()
 
     @classmethod
-    @print_run_time
     def start_stop_decorator(cls, debug=False):
         def wrapper1(func):
             def wrapper2(*args, **kwargs):
+                start_time = time.time()
                 SwPrint(debug=debug)
                 result = func(*args, **kwargs)
+                print(f'done in {generate_time_string(time.time() - start_time)}')
                 print(f'end')
                 cls.driver_quit()
                 SwPrint.save_log_to_file()

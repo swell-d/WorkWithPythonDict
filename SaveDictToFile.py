@@ -10,7 +10,7 @@ from openpyxl import Workbook
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 
-from GlobalFunctions import print_run_time
+from GlobalFunctions import print, print_run_time
 
 
 class SaveDictToFile:

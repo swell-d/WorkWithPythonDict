@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 from xlrd import open_workbook
 
 from CheckTypes import CheckTypesRe as CheckTypes
-from GlobalFunctions import print_run_time
+from GlobalFunctions import print, print_run_time
 
 
 class LoadDictFromFile:
@@ -25,16 +25,18 @@ class LoadDictFromFile:
     def __titles(cls, titles_original, language):
         titles = []
         for each in titles_original:
-            new_name1 = each[each.find('<')+1:each.find('>')] if ('<' in each and '>' in each) else each
-            new_name2 = each[each.find('(')+1:each.find(')')] if ('(' in each and ')' in each) else ''
+            new_name1 = each[each.find('<') + 1:each.find('>')] if ('<' in each and '>' in each) else each
+            new_name2 = each[each.find('(') + 1:each.find(')')] if ('(' in each and ')' in each) else ''
             if new_name2 == language: new_name1 += '_' + new_name2
             titles.append(cls.__correct(new_name1))
         return titles
 
     @staticmethod
     def __find_index(maincolumn, titles):
-        if maincolumn is None and 'sku' in titles: return titles.index('sku')
-        elif maincolumn in titles: return titles.index(maincolumn)
+        if maincolumn is None and 'sku' in titles:
+            return titles.index('sku')
+        elif maincolumn in titles:
+            return titles.index(maincolumn)
         return None
 
     @classmethod
@@ -68,9 +70,11 @@ class LoadDictFromFile:
         check_types = CheckTypes()
         for row in data[1:]:
             name = str(cls.__correct(row[index]) if index is not None else len(imports) + 1)
-            if name: imports[name] = {titles[i]: check_types.return_int_str(cls.__correct(row[i])) if recognize else cls.__correct(row[i])
-                                      for i in range(0, len(titles))}
-        print(f"{filename} / {len(data) - 1} lines / {len(imports)} loaded / {len(data) - 1 - len(imports)} lost / ", end='')
+            if name: imports[name] = {
+                titles[i]: check_types.return_int_str(cls.__correct(row[i])) if recognize else cls.__correct(row[i])
+                for i in range(0, len(titles))}
+        print(f"{filename} / {len(data) - 1} lines / {len(imports)} loaded / {len(data) - 1 - len(imports)} lost / ",
+              end='')
         return imports
 
     @classmethod
@@ -130,11 +134,11 @@ class LoadDictFromFile:
 class LoadDictFromFileTests(unittest.TestCase):
     __DATE = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
     __data_xls = {'1.0': {'#': 1.0, 'first': '1\n1', 'second': 22.2, 'third': ''},
-                   '2.0': {'#': 2.0, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+                  '2.0': {'#': 2.0, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
     __data_xls_not_recognized = {'1.0': {'#': '1.0', 'first': '1\n1', 'second': '22.2', 'third': ''},
-                                  '2.0': {'#': '2.0', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+                                 '2.0': {'#': '2.0', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
     __data_optimized_xls = {'1.0': {'#': 1.0, 'first': '1 1', 'second': 22.2, 'third': ''},
-                             '2.0': {'#': 2.0, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+                            '2.0': {'#': 2.0, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
     __data_xlsx = {'1': {'#': 1, 'first': '1\n1', 'second': 22.2, 'third': ''},
                    '2': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
     __data_xlsx_not_recognized = {'1': {'#': '1', 'first': '1\n1', 'second': '22.2', 'third': ''},

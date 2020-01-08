@@ -28,15 +28,17 @@ class TextCorrections:
         return quote(name).lower()
 
     @staticmethod
-    def get_cache_path(url, short=False, cache_path='C:\\Users\\Administrator\\Documents\\_python\\_cache\\'):
+    def get_cache_path(url, short=False, html=False,
+                       cache_path='C:\\Users\\Administrator\\Documents\\_python\\_cache\\'):
         if cache_path[-1] != '\\': cache_path += '\\'
         file_name = url[url.find("//") + 2:].replace('..', '').replace('/', '\\')
         if short and '?' in file_name: file_name = file_name[:file_name.rfind("?")]
         file_name = quote(file_name, safe='\\')
-        if file_name[-1] == '\\': file_name += 'html.html'
-        if '\\' not in file_name: file_name += '\\html.html'
-        right_part = file_name[file_name.rfind('\\'):]
-        if '.' not in right_part: file_name += '.html'
+        if file_name[-1] == '\\': file_name += 'html.html' if html else 'file'
+        if html:
+            if '\\' not in file_name: file_name += '\\html.html'
+            right_part = file_name[file_name.rfind('\\'):]
+            if '.' not in right_part: file_name += '.html'
         return re.sub('\\\\+', '\\\\', cache_path + file_name).lower()
 
     @staticmethod
@@ -132,13 +134,21 @@ class TextCorrections:
 
 
 class FindDigits:
-    def __init__(self, point='.,'):
-        self.__SS = f'[^0-9{point}-]'
-        self.__float_compile = re.compile(
-            f"{self.__SS}(0){self.__SS}|{self.__SS}(-?0[{point}]\\d+){self.__SS}|{self.__SS}(-?[1-9]\\d*([{point}]\\d+)?){self.__SS}")
+    point = '.,'
+    __ss = f'[^0-9{point}-]'
+    __float_compile = re.compile(
+        f"{__ss}(0){__ss}|{__ss}(-?0[{point}]\\d+){__ss}|{__ss}(-?[1-9]\\d*([{point}]\\d+)?){__ss}")
 
-    def find_floats(self, text):
-        findall = re.findall(self.__float_compile, f" {str(text)} ")
+    @classmethod
+    def find_int(cls, text):
+        findall = re.findall(cls.__float_compile, f" {str(text)} ")
+        result = []
+        for each in findall: result.append(int((each[2] or each[1] or each[0]).replace(',', '.')))
+        return result if result else ['']
+
+    @classmethod
+    def find_floats(cls, text):
+        findall = re.findall(cls.__float_compile, f" {str(text)} ")
         result = []
         for each in findall: result.append(float((each[2] or each[1] or each[0]).replace(',', '.')))
         return result if result else ['']
