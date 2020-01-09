@@ -107,7 +107,7 @@ class Parsing:
         ### работаем с категориями
         col = 1
         new_cat_name = None
-        print(f'всего {Category.count() // col} категорий')
+        print(f'всего {int(Category.count() / col)} категорий')
         while True:
             a, b = 0, 0
             for each in list(Category.categories.values()).copy():
@@ -120,9 +120,9 @@ class Parsing:
                 elif each.children_categories_count == 1 and each.children_products_count == 0:
                     each.delete()
                     b += 1
-            if a or b: print(f'удалено {a // col}+{b // col} категорий')
+            if a or b: print(f'удалено {int(a / col)}+{int(b / col)} категорий')
             if (a + b) == 0: break
-        print(f'всего {Category.count() // col} категорий')
+        print(f'всего {int(Category.count() / col)} категорий')
         ### перемещаем "промежуточные" товары в новую папку Other
         c = 0
         for each in list(Category.categories.values()).copy():

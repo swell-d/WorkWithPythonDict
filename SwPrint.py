@@ -14,18 +14,12 @@ class SwPrint:
         cls.__start_time = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
 
     @classmethod
-    def print(cls, text, only_debug=False, end='\n'):
+    def print(cls, text, only_debug=False, end='\n', without_datetime=False):
         if not cls.__debug and only_debug: return
-        text = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H:%M:%S")}  {str(text)}{end}'
-        print(text, end='')
-        cls.__log += text
-
-    @classmethod
-    def print_without_datetime(cls, text, only_debug=False, end='\n'):
-        if not cls.__debug and only_debug: return
-        text = f'{str(text)}{end}'
-        print(text, end='')
-        cls.__log += text
+        new_text = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H:%M:%S")}  ' if not without_datetime else ''
+        new_text += f'{str(text)}{end}'
+        print(new_text, end='')
+        cls.__log += new_text
 
     @classmethod
     def save_log_to_file(cls, prj_name='', path='C:\\Users\\Administrator\\Documents\\_python\\_logs\\'):
@@ -34,5 +28,3 @@ class SwPrint:
         with codecs.open(full_path, 'w', 'utf-8') as f:
             f.write(cls.__log)
 
-    # def print(text, only_debug=False, end='\n'):
-    #     SwPrint.print(text, only_debug, end)

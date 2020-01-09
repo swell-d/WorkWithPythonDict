@@ -9,10 +9,9 @@ def print_run_time(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
-        if func.__name__ in ['_xlsx_import', '_xls_import', '_csv_import', 'save_to_xlsx', 'save_to_csv']:
-            SwPrint.print_without_datetime(f'done in {generate_time_string(time.time() - start_time)}')
-        else:
-            SwPrint.print(f'done in {generate_time_string(time.time() - start_time)}')
+        func_without_datetime = ['_xlsx_import', '_xls_import', '_csv_import', 'save_to_xlsx', 'save_to_csv']
+        SwPrint.print(f'done in {generate_time_string(time.time() - start_time)}',
+                      without_datetime=func.__name__ in func_without_datetime)
         return result
 
     return wrapper
