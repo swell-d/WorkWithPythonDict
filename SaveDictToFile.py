@@ -1,6 +1,5 @@
 import codecs
 import copy
-# import csv
 import os
 import re
 import unittest
@@ -14,8 +13,6 @@ from GlobalFunctions import print, print_run_time
 
 
 class SaveDictToFile:
-    __DATE = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
-
     @classmethod
     def __init(cls, data, filename, fieldnames):
         if fieldnames is None: fieldnames = []
@@ -57,9 +54,9 @@ class SaveDictToFile:
 
     @classmethod
     @print_run_time
-    def save_to_xlsx(cls, data, filename='', fieldnames=None, optimize=False, open=False):
+    def save_to_xlsx(cls, data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
         data, fieldnames = cls.__init(data, filename, fieldnames)
-        newfilename = f'{cls.__DATE}_{filename}.xlsx'
+        newfilename = cls.get_new_file_name_with_datetime('.xlsx', filename, date_insert)
         wb = Workbook()
         ws = wb.active
         ws.append(['#'] + fieldnames)
@@ -79,11 +76,19 @@ class SaveDictToFile:
         return newfilename
 
     @classmethod
+    def get_new_file_name_with_datetime(cls, filetype, filename, date_insert):
+        if not date_insert: return f'{filename}{filetype}'
+        date = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
+        if '\\' not in filename: return f'{date}_{filename}{filetype}'
+        last_pos = filename.rfind('\\')
+        return f'{filename[:last_pos]}\\{date}_{filename[last_pos + 1:]}{filetype}'
+
+    @classmethod
     @print_run_time
-    def save_to_csv(cls, data, filename='', fieldnames=None, optimize=False, open=False):
+    def save_to_csv(cls, data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
         SEP, QC, NL = ',', '"', '\r\n'  # separator, quote char, new line
         data, fieldnames = cls.__init(data, filename, fieldnames)
-        newfilename = f'{cls.__DATE}_{filename}.csv'
+        newfilename = cls.get_new_file_name_with_datetime('.csv', filename, date_insert)
         with codecs.open(newfilename, 'w', encoding='utf-8') as file:
             fieldnames.insert(0, '#')
             file.write(SEP.join([f'{QC}{x}{QC}' for x in fieldnames]) + NL)
@@ -115,9 +120,9 @@ class SaveDictToFile:
     #             writer.writerow(each)
 
     @classmethod
-    def save_to_files(cls, data, filename='', fieldnames=None, optimize=False):
-        cls.save_to_xlsx(data, filename, fieldnames, optimize)
-        cls.save_to_csv(data, filename, fieldnames, optimize)
+    def save_to_files(cls, data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
+        cls.save_to_xlsx(data, filename, fieldnames, optimize, open, date_insert)
+        cls.save_to_csv(data, filename, fieldnames, optimize, open, date_insert)
 
 
 class SaveDictToFileTests(unittest.TestCase):
@@ -167,6 +172,17 @@ class SaveDictToFileTests(unittest.TestCase):
     #     self.assertEqual(result, csv)
     #     os.remove(file_name)
 
+    def test_get_new_file_name(self):
+        date = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
+        self.assertEqual('filename.xlsx',
+                         SaveDictToFile.get_new_file_name_with_datetime('.xlsx', 'filename', date_insert=False))
+        self.assertEqual(f'{date}_filename.xlsx',
+                         SaveDictToFile.get_new_file_name_with_datetime('.xlsx', 'filename', date_insert=True))
+        self.assertEqual('C:\\tmp\\filename.xlsx',
+                         SaveDictToFile.get_new_file_name_with_datetime('.xlsx', 'C:\\tmp\\filename',
+                                                                        date_insert=False))
+        self.assertEqual(f'C:\\tmp\\{date}_filename.xlsx',
+                         SaveDictToFile.get_new_file_name_with_datetime('.xlsx', 'C:\\tmp\\filename', date_insert=True))
 
 if __name__ == '__main__':
     unittest.main()
