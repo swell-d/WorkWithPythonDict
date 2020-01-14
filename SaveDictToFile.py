@@ -1,6 +1,7 @@
 import codecs
 import copy
 import os
+import pathlib
 import re
 import unittest
 from datetime import datetime
@@ -39,7 +40,7 @@ class SaveDictToFile:
         return [x for x in fieldnames if x in new_fieldnames] + additional_fields
 
     @classmethod
-    def __enhancement(cls, ws):
+    def __view_enhancement(cls, ws):
         def auto_column_width():
             dims = {}
             for row in ws.iter_rows():
@@ -69,7 +70,7 @@ class SaveDictToFile:
                     value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                 line.append(value)
             ws.append(line)
-        cls.__enhancement(ws)
+        cls.__view_enhancement(ws)
         wb.save(newfilename)
         print(f"{newfilename} / {i + 1} lines saved / ", end='')
         if open: os.startfile(newfilename)
@@ -77,10 +78,13 @@ class SaveDictToFile:
 
     @classmethod
     def get_new_file_name_with_datetime(cls, filetype, filename, date_insert):
-        if not date_insert: return f'{filename}{filetype}'
+        if not date_insert:
+            if '\\' in filename: pathlib.Path(filename[:filename.rfind('\\')]).mkdir(parents=True, exist_ok=True)
+            return f'{filename}{filetype}'
         date = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
         if '\\' not in filename: return f'{date}_{filename}{filetype}'
         last_pos = filename.rfind('\\')
+        pathlib.Path(filename[:last_pos]).mkdir(parents=True, exist_ok=True)
         return f'{filename[:last_pos]}\\{date}_{filename[last_pos + 1:]}{filetype}'
 
     @classmethod

@@ -59,16 +59,17 @@ class LoadDictFromFile:
 
     @classmethod
     @print_run_time
-    def _csv_import(cls, filename, maincolumn, language, optimize, recognize):
+    def _csv_import(cls, filename, maincolumn, language, optimize, recognize, delimiter):
         cls.__optimize, cls.__recognize = optimize, recognize
         imports = {}
         with codecs.open(filename, 'r', encoding='utf-8') as file:
-            reader = csv.reader(file, delimiter=',', quotechar='"')
+            reader = csv.reader(file, delimiter=delimiter, quotechar='"')
             data = [row for row in reader]
         titles = cls.__titles(data[0], language)
         index = cls.__find_index(maincolumn, titles)
         check_types = CheckTypes()
         for row in data[1:]:
+            if not len(row): continue
             name = str(cls.__correct(row[index]) if index is not None else len(imports) + 1)
             if name: imports[name] = {
                 titles[i]: check_types.return_int_str(cls.__correct(row[i])) if recognize else cls.__correct(row[i])
@@ -79,7 +80,7 @@ class LoadDictFromFile:
 
     @classmethod
     @print_run_time
-    def _xls_import(cls, filename, maincolumn, language, optimize, recognize):
+    def _xls_import(cls, filename, maincolumn, language, optimize, recognize, delimiter):
         cls.__optimize, cls.__recognize = optimize, recognize
         imports = {}
         sheet = open_workbook(filename).sheet_by_index(0)
@@ -96,7 +97,7 @@ class LoadDictFromFile:
 
     @classmethod
     @print_run_time
-    def _xlsx_import(cls, filename, maincolumn, language, optimize, recognize):
+    def _xlsx_import(cls, filename, maincolumn, language, optimize, recognize, delimiter):
         cls.__optimize, cls.__recognize = optimize, recognize
         imports = {}
         sheet = load_workbook(filename).active
@@ -112,7 +113,7 @@ class LoadDictFromFile:
         return imports
 
     @classmethod
-    def load(cls, filename, maincolumn=None, language=None, optimize=False, recognize=False):
+    def load(cls, filename, maincolumn=None, language=None, optimize=False, recognize=False, delimiter=','):
         if filename.endswith('.csv'):
             func = cls._csv_import
         elif filename.endswith('.xls'):
@@ -121,7 +122,7 @@ class LoadDictFromFile:
             func = cls._xlsx_import
         else:
             raise ValueError('Wrong filetype')
-        return func(filename, maincolumn, language, optimize, recognize)
+        return func(filename, maincolumn, language, optimize, recognize, delimiter)
 
     @staticmethod
     def change_main_column(data, maincolumn):

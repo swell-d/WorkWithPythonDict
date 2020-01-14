@@ -13,7 +13,7 @@ from selenium import webdriver
 
 from GlobalFunctions import print, generate_time_string
 from SwPrint import SwPrint
-from TextCorrections import TextCorrections as sw
+from TextCorrections import TextCorrections as Sw
 from parsing_classes import Category
 from parsing_classes import Product
 
@@ -44,11 +44,11 @@ class Parsing:
     @classmethod
     def create_simple_product(cls, sku, addon, brand, lieferant, name, lang,
                               category_ids, price, am_shipping_type, country, websites, good_symbols=' .-+/'):
-        sku = sw.clr(sku).strip(' .,')
+        sku = Sw.clr(sku).strip(' .,')
         if not cls.check_sku(sku, url='simple_product', good_symbols=good_symbols): return None
-        addon = sw.clr(addon).upper()
-        brand = sw.clr(brand, frst_bg=True)
-        name = sw.clr(name, frst_bg=True).strip(' .,')
+        addon = Sw.clr(addon).upper()
+        brand = Sw.clr(brand, frst_bg=True)
+        name = Sw.clr(name, frst_bg=True).strip(' .,')
 
         data = {}
         data['url'] = 'simple_product'
@@ -56,7 +56,7 @@ class Parsing:
         data['herstellernummer'] = sku
         data['manufacturer'] = brand
         data['lieferant'] = lieferant
-        data['name'] = sw.clr(f"{brand} {sku}. {name}").strip(' .,')
+        data['name'] = Sw.clr(f"{brand} {sku}. {name}").strip(' .,')
         data['short_description'] = name
         data['description'] = name
         cls.get_logo_with_sku(data, path=f'images_{lang}')
@@ -64,7 +64,7 @@ class Parsing:
         for each_cat in data['category_ids'].split('||'):
             cat = Category.create_category(each_cat, None)
             cat.add_product(Product.create_product(data['sku']))
-        data['price'] = sw.get_float(price, ndigits=2)
+        data['price'] = Sw.get_float(price, ndigits=2)
 
         data['am_shipping_type'] = am_shipping_type if lang != 'ru' else ''
         # 306-Paket 1225-Versand per Spedition 4320-BR
@@ -143,7 +143,7 @@ class Parsing:
     @classmethod
     def get_htmls_from_web(cls, url, simple=False, additional_func=None):
         result = []
-        file_name = sw.get_cache_path(url, html=True)
+        file_name = Sw.get_cache_path(url, html=True)
         if os.path.exists(file_name):
             print(f'use exist  {url}', only_debug=True)
             result.append(cls.read_file(file_name))
@@ -182,7 +182,7 @@ class Parsing:
 
     @staticmethod
     def save_text_to_file(file_name, text):
-        pathlib.Path(file_name[:file_name.rfind('\\')]).mkdir(parents=True, exist_ok=True)
+        if '\\' in file_name: pathlib.Path(file_name[:file_name.rfind('\\')]).mkdir(parents=True, exist_ok=True)
         with codecs.open(file_name, 'w', 'utf-8') as f:
             f.write(text)
 
@@ -232,8 +232,8 @@ class Parsing:
     @classmethod
     def get_file_from_web(cls, url, name, path='images'):
         if not name: name = unquote(url[url.rfind('/') + 1:url.rfind('.')])
-        name = sw.good_name(name)
-        cache_path = sw.get_cache_path(url)
+        name = Sw.good_name(name)
+        cache_path = Sw.get_cache_path(url)
         right_part = url[url.rfind('/') + 1:]
         if '?' in right_part: right_part = right_part[:right_part.rfind('?')]
         file_type = right_part[right_part.rfind('.'):].lower() if '.' in right_part else ''
@@ -252,7 +252,7 @@ class Parsing:
             urllib3.disable_warnings()
             page = cls.download(url)
             if page is None: return ''
-            pathlib.Path(cache_path[:cache_path.rfind('\\')]).mkdir(parents=True, exist_ok=True)
+            if '\\' in cache_path: pathlib.Path(cache_path[:cache_path.rfind('\\')]).mkdir(parents=True, exist_ok=True)
             with open(cache_path, 'wb') as file:
                 file.write(page.content)
             if cls._copyfile(url, cache_path, new_path, file_type, path) is None: return ''
@@ -300,7 +300,7 @@ class Parsing:
 
     @staticmethod
     def generate_img(sku, name, path='images'):
-        file_name = f'{sw.good_name(name)}.jpg'
+        file_name = f'{Sw.good_name(name)}.jpg'
         full_path = f'{path}\\{file_name}'
         if os.path.exists(full_path): return file_name
         print(f'generate img  {sku}')
@@ -314,7 +314,7 @@ class Parsing:
 
     @staticmethod
     def delete_file(url):
-        file_name = sw.get_cache_path(url)
+        file_name = Sw.get_cache_path(url)
         if os.path.exists(file_name):
             os.remove(file_name)
             print(f'=== delete file  {url}')
