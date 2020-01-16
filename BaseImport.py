@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup, Comment
 from selenium.webdriver.common.action_chains import ActionChains
 
+from Deepl import Deepl
 from GlobalFunctions import print, print_run_time
 from LoadDictFromFile import LoadDictFromFile
 from Parsing import Parsing
@@ -19,7 +20,7 @@ if __name__ == '__main__':  # need for "Optimize imports"
     BeautifulSoup()
     Comment()
     ActionChains()
-
+    Deepl()
     print()
     print_run_time()
     LoadDictFromFile()

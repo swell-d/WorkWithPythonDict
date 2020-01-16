@@ -20,6 +20,7 @@ class SwPrint:
         new_text += f'{str(text)}{end}'
         print(new_text, end='')
         cls.__log += new_text
+        # cls.save_log_to_file()
 
     @classmethod
     def save_log_to_file(cls, prj_name='', path='C:\\Users\\Administrator\\Documents\\_python\\_logs\\'):

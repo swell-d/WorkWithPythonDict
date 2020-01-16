@@ -56,6 +56,7 @@ class SaveDictToFile:
     @classmethod
     @print_run_time
     def save_to_xlsx(cls, data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
+        if not cls.__check_data(data, filename): return None
         data, fieldnames = cls.__init(data, filename, fieldnames)
         newfilename = cls.get_new_file_name_with_datetime('.xlsx', filename, date_insert)
         wb = Workbook()
@@ -77,6 +78,12 @@ class SaveDictToFile:
         return newfilename
 
     @classmethod
+    def __check_data(cls, data, filename):
+        if data: return True
+        print(f'{filename} / nothing to save / ', end='')
+        return False
+
+    @classmethod
     def get_new_file_name_with_datetime(cls, filetype, filename, date_insert):
         if not date_insert:
             if '\\' in filename: pathlib.Path(filename[:filename.rfind('\\')]).mkdir(parents=True, exist_ok=True)
@@ -90,6 +97,7 @@ class SaveDictToFile:
     @classmethod
     @print_run_time
     def save_to_csv(cls, data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
+        if not cls.__check_data(data, filename): return None
         SEP, QC, NL = ',', '"', '\r\n'  # separator, quote char, new line
         data, fieldnames = cls.__init(data, filename, fieldnames)
         newfilename = cls.get_new_file_name_with_datetime('.csv', filename, date_insert)

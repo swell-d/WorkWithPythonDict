@@ -59,7 +59,7 @@ class Parsing:
         data['name'] = Sw.clr(f"{brand} {sku}. {name}").strip(' .,')
         data['short_description'] = name
         data['description'] = name
-        cls.get_logo_with_sku(data, path=f'images_{lang}')
+        cls.get_logo_with_sku(data, path=f'images')
         data['category_ids'] = category_ids
         for each_cat in data['category_ids'].split('||'):
             cat = Category.create_category(each_cat, None)
@@ -303,7 +303,7 @@ class Parsing:
         file_name = f'{Sw.good_name(name)}.jpg'
         full_path = f'{path}\\{file_name}'
         if os.path.exists(full_path): return file_name
-        print(f'generate img  {sku}')
+        print(f'generate img  {full_path}')
         fnt = ImageFont.truetype('C:\Windows\Fonts\Arial.ttf', 60)
         img = Image.open('logo.png').convert('RGB')
         d = ImageDraw.Draw(img)

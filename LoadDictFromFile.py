@@ -16,10 +16,14 @@ class LoadDictFromFile:
     __optimize, __recognize = None, None
 
     @classmethod
-    def __correct(cls, value):
+    def __correct(cls, value, for_xls=False):
         if value is None: return ''
         if cls.__optimize and isinstance(value, str): return re.sub(r'\s+', ' ', value).strip()
-        return value if cls.__recognize else str(value)
+        if cls.__recognize:
+            return value
+        else:
+            if for_xls and isinstance(value, float) and str(value).endswith('.0'): return str(value)[:-2]
+            return str(value)
 
     @classmethod
     def __titles(cls, titles_original, language):
@@ -43,7 +47,7 @@ class LoadDictFromFile:
     def __xls_titles(cls, sheet):
         titles_original = []
         for column in range(0, sheet.ncols):
-            data = str(cls.__correct(sheet.cell(0, column).value))
+            data = str(cls.__correct(sheet.cell(0, column).value, for_xls=True))
             if data == '': break
             titles_original.append(data)
         return titles_original
@@ -87,7 +91,7 @@ class LoadDictFromFile:
         titles = cls.__titles(cls.__xls_titles(sheet), language)
         index = cls.__find_index(maincolumn, titles)
         for a in range(1, sheet.nrows):
-            row = [cls.__correct(sheet.cell(a, col).value) for col in range(0, len(titles))]
+            row = [cls.__correct(sheet.cell(a, col).value, for_xls=True) for col in range(0, len(titles))]
             name = str(row[index] if index is not None else len(imports) + 1)
             if name: imports[name] = {titles[i]: row[i] for i in range(0, len(titles))}
         print(
@@ -129,6 +133,23 @@ class LoadDictFromFile:
         result = {}
         for each in data.values(): result[each[maincolumn]] = each
         print(f'change_main_column: {len(data)} lines / {len(result)} loaded / {len(data) - len(result)} lost')
+        return result
+
+    @staticmethod
+    def count_not_empty_values(data, column):
+        result = 0
+        for each in data.values():
+            value = each.get(column, None)
+            if value is not None and value != '':
+                result += 1
+        return result
+
+    @staticmethod
+    def count_values(data, column, value):
+        result = 0
+        for each in data.values():
+            if each.get(column, '') == value:
+                result += 1
         return result
 
 

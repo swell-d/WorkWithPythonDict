@@ -3,17 +3,21 @@ import unittest
 
 import requests
 
-from BaseImport import *
+from TextCorrections import TextCorrections as Sw
+from WorkWithJSON import WorkWithJSON
 
 
 class Deepl:
     __DB = None
-    __auth_key = WorkWithJSON.load_dict_from_json('deepl_cfg.txt')['auth_key']
-    __DB_PATH = 'deepl_database.txt'
+    __personal_dict = None
+    __PATH = 'C:\\Users\\Administrator\\Documents\\_python\\_pycharm\\WorkWithPythonDict\\'
+    __auth_key = WorkWithJSON.load_dict_from_json(f'{__PATH}deepl_cfg.txt')['auth_key']
+    __DB_PATH = f'{__PATH}deepl_database.txt'
 
     @classmethod
-    def __init__(cls):
+    def __init__(cls, personal_dict):
         cls.__DB = WorkWithJSON.load_dict_from_json(cls.__DB_PATH)
+        cls.__personal_dict = personal_dict.copy()
 
     @classmethod
     def translate_text(cls, txt, source_lang, target_lang):
@@ -24,9 +28,16 @@ class Deepl:
         if text in db: return db[text]
         page = cls.connect_to_API(text, source_lang, target_lang)
         result = Sw.clr(json.loads(page.text)['translations'][0]['text'])
+        result = cls._personal_dict(result)
         cls.save_stat_and_print(text, result, source_lang, target_lang)
         db[text] = result
         cls.save_db()
+        return result
+
+    @classmethod
+    def _personal_dict(cls, result):
+        for key, value in cls.__personal_dict.items():
+            result.replace(key, value)
         return result
 
     @classmethod
