@@ -25,7 +25,7 @@ class TextCorrections:
         name = name.replace('/', '-').replace('\\', '-').replace(' ', '-').replace('*', '-')
         name = name.replace('ä', 'ae').replace('ö', 'oe').replace('ü', 'ue').replace('ß', 'ss')
         name = name.replace('°', '').replace('+', '-').replace('?', '-').replace('&', '-').replace('%20', '_')
-        name = cls.transliterate(name)
+        # name = cls.transliterate(name)
         return quote(name).lower()
 
     @staticmethod

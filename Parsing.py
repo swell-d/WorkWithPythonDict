@@ -8,6 +8,7 @@ from urllib.parse import quote, unquote
 import requests
 import urllib3
 from PIL import Image, ImageDraw, ImageFont
+from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from selenium import webdriver
 
@@ -32,7 +33,7 @@ class Parsing:
         if not sku:
             print(f'=== no sku  {url}')
             return False
-        if len(sku) > 21: print(f'=== длинный артикул  {sku} {url}')
+        # if len(sku) > 21: print(f'=== длинный артикул  {sku} {url}')
         for each in sku:
             if each.isalpha() or each.isdecimal() or each in good_symbols:
                 continue
@@ -42,7 +43,7 @@ class Parsing:
         return True
 
     @classmethod
-    def create_simple_product(cls, sku, addon, brand, lieferant, name, lang,
+    def create_simple_product(cls, sku, addon, brand, lieferant, name, lang, imgs,
                               category_ids, price, am_shipping_type, country, websites, good_symbols=' .-+/'):
         sku = Sw.clr(sku).strip(' .,')
         if not cls.check_sku(sku, url='simple_product', good_symbols=good_symbols): return None
@@ -59,12 +60,12 @@ class Parsing:
         data['name'] = Sw.clr(f"{brand} {sku}. {name}").strip(' .,')
         data['short_description'] = name
         data['description'] = name
-        cls.get_logo_with_sku(data, path=f'images')
+        cls.download_imgs(data, imgs=imgs, path='images')
         data['category_ids'] = category_ids
         for each_cat in data['category_ids'].split('||'):
             cat = Category.create_category(each_cat, None)
             cat.add_product(Product.create_product(data['sku']))
-        data['price'] = Sw.get_float(price, ndigits=2)
+        data['price'] = Sw.get_float(price, ndigits=2) if price else 0
 
         data['am_shipping_type'] = am_shipping_type if lang != 'ru' else ''
         # 306-Paket 1225-Versand per Spedition 4320-BR
@@ -72,7 +73,7 @@ class Parsing:
         data['websites'] = websites  # 'base'
 
         cls.same_for_all(data, lang)
-        cls.minimalka(data)
+        # cls.minimalka(data)
 
         # additional
         # data['special_price'] = ''
@@ -83,9 +84,16 @@ class Parsing:
 
         return data
 
+    @classmethod
+    def get_good_html(cls, text):
+        if text == '': return ''
+        return Sw.clr(BeautifulSoup(text, 'lxml').body)[6:-7]
+
     @staticmethod
     def same_for_all(data, lang):
-        url_key = f"{data['manufacturer']}_{data['herstellernummer']}".strip('_').lower()
+        brand = Sw.transliterate(data['manufacturer'])
+        sku = Sw.transliterate(data['herstellernummer'])
+        url_key = f"{brand}_{sku}".strip('_').lower()
         url_key = url_key.replace('/', '-').replace('\\', '-').replace(' ', '-').replace('+', '-').replace('.', '-')
         data['url_key'] = quote(url_key)
         data['status'] = 1
@@ -272,8 +280,8 @@ class Parsing:
     @classmethod
     def download_imgs(cls, data, imgs, path='images'):
         i = 1
-        brand = data['manufacturer']
-        sku = data['herstellernummer']
+        brand = Sw.transliterate(data['manufacturer'])
+        sku = Sw.transliterate(data['herstellernummer'])
         for link in imgs:
             if not data.get('image'):
                 data['image'] = cls.get_file_from_web(link, f'{brand}_{sku}', path)
@@ -291,8 +299,8 @@ class Parsing:
 
     @classmethod
     def get_logo_with_sku(cls, data, path='images'):
-        brand = data['manufacturer']
-        sku = data['herstellernummer']
+        brand = Sw.transliterate(data['manufacturer'])
+        sku = Sw.transliterate(data['herstellernummer'])
         data['image'] = cls.generate_img(sku, f'{brand}_{sku}', path)
         data['small_image'] = data['image']
         data['thumbnail'] = data['image']

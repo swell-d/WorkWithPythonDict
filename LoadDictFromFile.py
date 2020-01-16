@@ -152,6 +152,12 @@ class LoadDictFromFile:
                 result += 1
         return result
 
+    @staticmethod
+    def find_value(data, key, value):
+        for each in data.values():
+            found_value = each.get(key, '')
+            if found_value == value: return each
+
 
 class LoadDictFromFileTests(unittest.TestCase):
     __DATE = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
