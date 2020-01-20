@@ -3,9 +3,9 @@ import csv
 import os
 import re
 import unittest
-from datetime import datetime
 
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 from xlrd import open_workbook
 
 from CheckTypes import CheckTypesRe as CheckTypes
@@ -46,20 +46,28 @@ class LoadDictFromFile:
     @classmethod
     def __xls_titles(cls, sheet):
         titles_original = []
+        last_not_empty_column = 0
         for column in range(0, sheet.ncols):
             data = str(cls.__correct(sheet.cell(0, column).value, for_xls=True))
-            if data == '': break
+            if data == '':
+                data = get_column_letter(column + 1)
+            else:
+                last_not_empty_column = column + 1
             titles_original.append(data)
-        return titles_original
+        return titles_original[:last_not_empty_column]
 
     @classmethod
     def __xlsx_titles(cls, sheet):
         titles_original = []
+        last_not_empty_column = 0
         for column in range(1, sheet.max_column + 1):
             data = str(cls.__correct(sheet.cell(row=1, column=column).value))
-            if data == '': break
+            if data == '':
+                data = get_column_letter(column)
+            else:
+                last_not_empty_column = column
             titles_original.append(data)
-        return titles_original
+        return titles_original[:last_not_empty_column]
 
     @classmethod
     @print_run_time
@@ -72,9 +80,9 @@ class LoadDictFromFile:
         titles = cls.__titles(data[0], language)
         index = cls.__find_index(maincolumn, titles)
         check_types = CheckTypes()
-        for row in data[1:]:
+        for a, row in enumerate(data[1:]):
             if not len(row): continue
-            name = str(cls.__correct(row[index]) if index is not None else len(imports) + 1)
+            name = str(cls.__correct(row[index]) if index is not None else a + 2)
             if name: imports[name] = {
                 titles[i]: check_types.return_int_str(cls.__correct(row[i])) if recognize else cls.__correct(row[i])
                 for i in range(0, len(titles))}
@@ -92,7 +100,7 @@ class LoadDictFromFile:
         index = cls.__find_index(maincolumn, titles)
         for a in range(1, sheet.nrows):
             row = [cls.__correct(sheet.cell(a, col).value, for_xls=True) for col in range(0, len(titles))]
-            name = str(row[index] if index is not None else len(imports) + 1)
+            name = str(row[index] if index is not None else a + 1)
             if name: imports[name] = {titles[i]: row[i] for i in range(0, len(titles))}
         print(
             f"{filename} / {sheet.nrows - 1} lines / {len(imports)} loaded / {sheet.nrows - 1 - len(imports)} lost / ",
@@ -109,7 +117,7 @@ class LoadDictFromFile:
         index = cls.__find_index(maincolumn, titles)
         for a in range(2, sheet.max_row + 1):
             row = [cls.__correct(sheet.cell(row=a, column=col).value) for col in range(1, len(titles) + 1)]
-            name = str(row[index] if index is not None else len(imports) + 1)
+            name = str(row[index] if index is not None else a)
             if name: imports[name] = {titles[i]: row[i] for i in range(0, len(titles))}
         print(
             f"{filename} / {sheet.max_row - 1} lines / {len(imports)} loaded / {sheet.max_row - 1 - len(imports)} lost / ",
@@ -160,78 +168,72 @@ class LoadDictFromFile:
 
 
 class LoadDictFromFileTests(unittest.TestCase):
-    __DATE = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
-    __data_xls = {'1.0': {'#': 1.0, 'first': '1\n1', 'second': 22.2, 'third': ''},
-                  '2.0': {'#': 2.0, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
-    __data_xls_not_recognized = {'1.0': {'#': '1.0', 'first': '1\n1', 'second': '22.2', 'third': ''},
-                                 '2.0': {'#': '2.0', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
-    __data_optimized_xls = {'1.0': {'#': 1.0, 'first': '1 1', 'second': 22.2, 'third': ''},
-                            '2.0': {'#': 2.0, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
-    __data_xlsx = {'1': {'#': 1, 'first': '1\n1', 'second': 22.2, 'third': ''},
-                   '2': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
-    __data_xlsx_not_recognized = {'1': {'#': '1', 'first': '1\n1', 'second': '22.2', 'third': ''},
-                                  '2': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
-    __data_optimized_xlsx = {'1': {'#': 1, 'first': '1 1', 'second': 22.2, 'third': ''},
-                             '2': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
-    __data_csv = {'1': {'#': 1, 'first': '1\r\n1', 'second': '22,2', 'third': ''},  # Todo recognize float
-                  '2': {'#': 2, 'first': '', 'second': 12345678901234567890, 'third': '"4""4'}}
-    __data_optimized_csv = {'1': {'#': 1, 'first': '1 1', 'second': '22,2', 'third': ''},  # Todo recognize float
-                            '2': {'#': 2, 'first': '', 'second': 12345678901234567890, 'third': '"4""4'}}
+    # CSV
+    __csv = {'2': {'#': '1', 'first': '1\r\n1', 'second': '22,2', 'third': ''},
+             '3': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+    __csv_main = {'1': {'#': '1', 'first': '1\r\n1', 'second': '22,2', 'third': ''},
+                  '2': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+    __csv_recogn = {'2': {'#': 1, 'first': '1\r\n1', 'second': '22,2', 'third': ''},
+                    '3': {'#': 2, 'first': '', 'second': 12345678901234567890, 'third': '"4""4'}}  # Todo float
+    __csv_optim = {'2': {'#': '1', 'first': '1 1', 'second': '22,2', 'third': ''},
+                   '3': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+    # XLS
+    __xls = {'2': {'#': '1', 'first': '1\n1', 'second': '22.2', 'third': ''},
+             '3': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+    __xls_main = {'1': {'#': '1', 'first': '1\n1', 'second': '22.2', 'third': ''},
+                  '2': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+    __xls_recogn = {'2': {'#': 1, 'first': '1\n1', 'second': 22.2, 'third': ''},
+                    '3': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}  # Todo int+float
+    __xls_optim = {'2': {'#': '1', 'first': '1 1', 'second': '22.2', 'third': ''},
+                   '3': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
 
     def test_csv_import(self):
-        test_dict = LoadDictFromFile.load('files_for_tests/test_import.csv', maincolumn='#', recognize=True)
-        self.assertEqual(self.__data_csv, test_dict)
-        test_dict2 = LoadDictFromFile.load('files_for_tests/test_import.csv', maincolumn='#', optimize=True,
-                                           recognize=True)
-        self.assertEqual(self.__data_optimized_csv, test_dict2)
-        test_dict3 = LoadDictFromFile.load('files_for_tests/test_import.csv', recognize=True)
-        self.assertEqual(self.__data_csv, test_dict3)
-        test_dict4 = LoadDictFromFile.load('files_for_tests/test_import.csv', optimize=True, recognize=True)
-        self.assertEqual(self.__data_optimized_csv, test_dict4)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.csv')
+        self.assertEqual(self.__csv, test_dict)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.csv', maincolumn='#')
+        self.assertEqual(self.__csv_main, test_dict)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.csv', recognize=True)
+        self.assertEqual(self.__csv_recogn, test_dict)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.csv', optimize=True)
+        self.assertEqual(self.__csv_optim, test_dict)
 
     def test_xls_import(self):
-        test_dict1 = LoadDictFromFile.load('files_for_tests/test_import.xls', maincolumn='#', recognize=True)
-        self.assertEqual(self.__data_xls, test_dict1)
-        test_dict2 = LoadDictFromFile.load('files_for_tests/test_import.xls', maincolumn='#', optimize=True,
-                                           recognize=True)
-        self.assertEqual(self.__data_optimized_xls, test_dict2)
-        # test_dict3 = LoadDictFromFile.load('test_import.xls', recognize=True)
-        # self.assertEqual(self.__data_xls, test_dict3)
-        # test_dict4 = LoadDictFromFile.load('test_import.xls', optimize=True, recognize=True)
-        # self.assertEqual(self.__data_optimized_xls, test_dict4)
-        test_dict5 = LoadDictFromFile.load('files_for_tests/test_import.xls', maincolumn='#', recognize=False)
-        self.assertEqual(self.__data_xls_not_recognized, test_dict5)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.xls')
+        self.assertEqual(self.__xls, test_dict)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.xls', maincolumn='#')
+        self.assertEqual(self.__xls_main, test_dict)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.xls', recognize=True)
+        self.assertEqual(self.__xls_recogn, test_dict)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.xls', optimize=True)
+        self.assertEqual(self.__xls_optim, test_dict)
 
     def test_xlsx_import(self):
-        test_dict1 = LoadDictFromFile.load('files_for_tests/test_import.xlsx', maincolumn='#', recognize=True)
-        self.assertEqual(self.__data_xlsx, test_dict1)
-        test_dict2 = LoadDictFromFile.load('files_for_tests/test_import.xlsx', maincolumn='#', optimize=True,
-                                           recognize=True)
-        self.assertEqual(self.__data_optimized_xlsx, test_dict2)
-        test_dict3 = LoadDictFromFile.load('files_for_tests/test_import.xlsx', recognize=True)
-        self.assertEqual(self.__data_xlsx, test_dict3)
-        test_dict4 = LoadDictFromFile.load('files_for_tests/test_import.xlsx', optimize=True, recognize=True)
-        self.assertEqual(self.__data_optimized_xlsx, test_dict4)
-        test_dict5 = LoadDictFromFile.load('files_for_tests/test_import.xlsx', maincolumn='#', recognize=False)
-        self.assertEqual(self.__data_xlsx_not_recognized, test_dict5)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.xlsx')
+        self.assertEqual(self.__xls, test_dict)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.xlsx', maincolumn='#')
+        self.assertEqual(self.__xls_main, test_dict)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.xlsx', recognize=True)
+        self.assertEqual(self.__xls_recogn, test_dict)
+        test_dict = LoadDictFromFile.load('files_for_tests/test_import.xlsx', optimize=True)
+        self.assertEqual(self.__xls_optim, test_dict)
 
     def test_csv_in_and_out(self):
         from SaveDictToFile import SaveDictToFile
-        SaveDictToFile.save_to_csv(self.__data_csv, filename='test')
-        self.assertEqual(self.__data_csv,
-                         LoadDictFromFile.load(f'{self.__DATE}_test.csv', recognize=True))
-        self.assertEqual(self.__data_optimized_csv,
-                         LoadDictFromFile.load(f'{self.__DATE}_test.csv', optimize=True, recognize=True))
-        os.remove(f'{self.__DATE}_test.csv')
+        tmp = SaveDictToFile.save_to_csv(self.__csv)
+        self.assertEqual(self.__csv, LoadDictFromFile.load(tmp))
+        self.assertEqual(self.__csv_main, LoadDictFromFile.load(tmp, maincolumn='#'))
+        self.assertEqual(self.__csv_recogn, LoadDictFromFile.load(tmp, recognize=True))
+        self.assertEqual(self.__csv_optim, LoadDictFromFile.load(tmp, optimize=True))
+        os.remove(tmp)
 
     def test_xlsx_in_and_out(self):
         from SaveDictToFile import SaveDictToFile
-        SaveDictToFile.save_to_xlsx(self.__data_xlsx, filename='test')
-        self.assertEqual(self.__data_xlsx,
-                         LoadDictFromFile.load(f'{self.__DATE}_test.xlsx', recognize=True))
-        self.assertEqual(self.__data_optimized_xlsx,
-                         LoadDictFromFile.load(f'{self.__DATE}_test.xlsx', optimize=True, recognize=True))
-        os.remove(f'{self.__DATE}_test.xlsx')
+        tmp = SaveDictToFile.save_to_xlsx(self.__xls)
+        self.assertEqual(self.__xls, LoadDictFromFile.load(tmp))
+        self.assertEqual(self.__xls_main, LoadDictFromFile.load(tmp, maincolumn='#'))
+        # self.assertEqual(self.__xls_recogn, LoadDictFromFile.load(tmp, recognize=True))  # Todo int+float
+        self.assertEqual(self.__xls_optim, LoadDictFromFile.load(tmp, optimize=True))
+        os.remove(tmp)
 
 
 if __name__ == '__main__':
