@@ -252,7 +252,11 @@ class Parsing:
             raise ValueError
         new_path = f'{path}\\{name}{file_type}'
         if os.path.exists(cache_path) and os.path.exists(new_path):
-            print(f'do nothing  {url}', only_debug=True)
+            if os.stat(cache_path).st_size == os.stat(new_path).st_size:
+                print(f'do nothing  {url}', only_debug=True)
+            else:
+                # print(f'st_size: {os.stat(cache_path).st_size} != {os.stat(new_path).st_size}')
+                if cls._copyfile(url, cache_path, new_path, file_type, path) is None: return ''
         elif os.path.exists(cache_path) and not os.path.exists(new_path):
             if cls._copyfile(url, cache_path, new_path, file_type, path) is None: return ''
         else:
@@ -268,14 +272,14 @@ class Parsing:
 
     @classmethod
     def _copyfile(cls, url, cache_path, new_path, file_type, path):
-        statinfo = os.stat(cache_path)
-        if statinfo.st_size == 0: return None  # Todo try to download one more time
+        if os.stat(cache_path).st_size == 0: return None  # Todo try to download one more time
         if 'images' in path and file_type in ['.jpg', '.png', '.gif']:
             img = Image.open(cache_path)
             if (img.size[0] + img.size[1]) < 200: return None
         print(f'copy file  {url}', only_debug=True)
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         copyfile(cache_path, new_path)
+        return True
 
     @classmethod
     def download_imgs(cls, data, imgs, path='images'):
@@ -301,10 +305,11 @@ class Parsing:
     def get_logo_with_sku(cls, data, path='images'):
         brand = Sw.transliterate(data['manufacturer'])
         sku = Sw.transliterate(data['herstellernummer'])
-        data['image'] = cls.generate_img(sku, f'{brand}_{sku}', path)
+        data['image'] = cls.generate_img(sku, f'{brand}_{sku}', f'{path}')
         data['small_image'] = data['image']
         data['thumbnail'] = data['image']
         data['media_gallery'] = data['image']
+        data['logo'] = 'x'
 
     @staticmethod
     def generate_img(sku, name, path='images'):
