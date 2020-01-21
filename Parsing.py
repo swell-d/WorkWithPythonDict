@@ -110,11 +110,9 @@ class Parsing:
         data['qty_increments'] = min_count
         data['use_config_qty_increments'] = 0 if min_count > 1 else 1
 
-    @staticmethod
-    def reorganize_categories(lang):
-        ### работаем с категориями
-        col = 1
-        new_cat_name = None
+    @classmethod
+    def reorganize_categories(cls, products, lang, col=1):
+        new_cat_name = cls.__new_cat_name(lang)
         print(f'всего {int(Category.count() / col)} категорий')
         while True:
             a, b = 0, 0
@@ -131,22 +129,31 @@ class Parsing:
             if a or b: print(f'удалено {int(a / col)}+{int(b / col)} категорий')
             if (a + b) == 0: break
         print(f'всего {int(Category.count() / col)} категорий')
-        ### перемещаем "промежуточные" товары в новую папку Other
-        c = 0
-        for each in list(Category.categories.values()).copy():
-            if each.children_categories_count > 0 and each.children_products_count > 0:
-                if lang == 'de':
-                    new_cat_name = 'Zubehör'
-                elif lang == 'en':
-                    new_cat_name = 'Other'
-                elif lang == 'ru':
-                    new_cat_name = 'Прочее'
-                new_cat = Category.create_category(f'{each}|{new_cat_name}')
-                for child in each.find_children(show_cats=False, show_products=True, text=False):
-                    child.move(each, new_cat)
-                c += 1
-        if new_cat_name:
-            print(f'создано {c // col} новых категорий {new_cat_name}. итого {Category.count() // col} категорий')
+        ### перемещаем "промежуточные" товары в новую папку
+        while True:
+            c = 0
+            for each in list(Category.categories.values()).copy():
+                if each.children_categories_count > 0 and each.children_products_count > 0:
+                    new_cat = Category.create_category(f'{each}|{new_cat_name}')
+                    for child in each.find_children(show_cats=False, show_products=True, text=False):
+                        child.move(each, new_cat)
+                    c += 1
+            if c: print(f'создано {c // col} новых категорий {new_cat_name}. итого {Category.count() // col} категорий')
+            if c == 0: break
+
+        for product in products.values():
+            product['category_ids2'] = Product.export_categories(product['sku'])
+        Category.clear()
+        Product.clear()
+
+    @staticmethod
+    def __new_cat_name(lang):
+        if lang == 'de':
+            return 'Zubehör'
+        elif lang == 'en':
+            return 'Other'
+        elif lang == 'ru':
+            return 'Прочее'
 
     @classmethod
     def get_htmls_from_web(cls, url, simple=False, additional_func=None):
