@@ -16,9 +16,18 @@ class TextCorrections:
 
     @staticmethod
     def get_float(text, ndigits=2):
-        # if not isinstance(text, [str, int, float]): raise ValueError
         if isinstance(text, str): text = text.replace(',', '.')
         return round(float(text), ndigits)
+
+    @classmethod
+    def get_float_or_empty(cls, text, ndigits=2):
+        if cls.clr(text) == '': return ''
+        return cls.get_float(text, ndigits)
+
+    @classmethod
+    def get_float_or_null(cls, text, ndigits=2):
+        if not text: return 0.0
+        return cls.get_float(text, ndigits)
 
     @classmethod
     def good_name(cls, name):
