@@ -15,9 +15,9 @@ class Deepl:
     __DB_PATH = f'{__PATH}deepl_database.txt'
 
     @classmethod
-    def __init__(cls, personal_dict):
+    def __init__(cls, personal_dict=None):
         cls.__DB = WorkWithJSON.load_dict_from_json(cls.__DB_PATH)
-        cls.__personal_dict = personal_dict.copy()
+        cls.__personal_dict = personal_dict.copy() if personal_dict is not None else {}
 
     @classmethod
     def translate_text(cls, txt, source_lang, target_lang):
@@ -53,7 +53,8 @@ class Deepl:
     def connect_to_API(cls, text, source_lang, target_lang):
         data = {'auth_key': cls.__auth_key,
                 'text': text,
-                'target_lang': target_lang}
+                'target_lang': target_lang,
+                'tag_handling': 'xml'}
         if source_lang: data['source_lang'] = source_lang
         page = requests.post('https://api.deepl.com/v2/translate', data)
         if page.status_code != 200:
@@ -76,6 +77,12 @@ class DeeplTests(unittest.TestCase):
     def test_translate(self):
         deepl = Deepl()
         self.assertEqual('Guten Tag!', deepl.translate_text('Hello!', source_lang='EN', target_lang='DE'))
+        self.assertEqual(
+            'Drücken Sie auf <i>Weiter</i>, um zur nächsten Seite zu gelangen.',
+            Deepl.translate_text(
+                'Press <i>Continue</i> to advance to the next page.', source_lang='EN', target_lang='DE'
+            )
+        )
 
 
 if __name__ == '__main__':
