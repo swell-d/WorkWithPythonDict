@@ -12,7 +12,6 @@ from SaveDictToFile import SaveDictToFile
 from TextCorrections import FindDigits, Html, TextCorrections as Sw
 from WorkWithJSON import WorkWithJSON
 from my_modules2 import param_list_extend
-from parsing_classes import Category, Product
 
 if __name__ == '__main__':  # need for "Optimize imports"
     time.time()
@@ -31,5 +30,3 @@ if __name__ == '__main__':  # need for "Optimize imports"
     Sw()
     WorkWithJSON()
     param_list_extend()
-    Category()
-    Product()

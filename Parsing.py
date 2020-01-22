@@ -3,7 +3,7 @@ import os
 import pathlib
 import time
 from shutil import copyfile
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, urljoin
 
 import requests
 import urllib3
@@ -12,11 +12,11 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from selenium import webdriver
 
+import Category
+import Product
 from GlobalFunctions import print, generate_time_string
 from SwPrint import SwPrint
 from TextCorrections import TextCorrections as Sw
-from parsing_classes import Category
-from parsing_classes import Product
 
 
 # from selenium.webdriver.support.ui import Select, WebDriverWait
@@ -61,10 +61,9 @@ class Parsing:
         data['short_description'] = name
         data['description'] = name
         cls.download_imgs(data, imgs=imgs, path='images')
-        data['category_ids'] = category_ids
-        for each_cat in data['category_ids'].split('||'):
-            cat = Category.create_category(each_cat, None)
-            cat.add_product(Product.create_product(data['sku']))
+        # data['category_ids'] = category_ids
+        for each_category in category_ids.split('||'):
+            cls.create_product_and_category(data['sku'], each_category)
         data['price'] = Sw.get_float(price, ndigits=2) if price else 0
 
         data['am_shipping_type'] = am_shipping_type if lang != 'ru' else ''
@@ -83,6 +82,11 @@ class Parsing:
         # data['relation'] = ''  # через ||
 
         return data
+
+    @classmethod
+    def create_product_and_category(cls, sku, category_path):
+        category = Category.Category.create_category(category_path, None)
+        category.add_product(Product.Product.create_product(sku))
 
     @classmethod
     def get_good_html(cls, text):
@@ -110,50 +114,13 @@ class Parsing:
         data['qty_increments'] = min_count
         data['use_config_qty_increments'] = 0 if min_count > 1 else 1
 
-    @classmethod
-    def reorganize_categories(cls, products, lang, col=1):
-        new_cat_name = cls.__new_cat_name(lang)
-        print(f'всего {int(Category.count() / col)} категорий')
-        while True:
-            a, b = 0, 0
-            for each in list(Category.categories.values()).copy():
-                if str(each).count('|') < 3: continue
-                ### удаляем папки с количеством товаров меньше 3
-                if each.children_categories_count == 0 and each.children_products_count < 3:
-                    each.delete()
-                    a += 1
-                ### удаляем промежуточные папки без товаров
-                elif each.children_categories_count == 1 and each.children_products_count == 0:
-                    each.delete()
-                    b += 1
-            if a or b: print(f'удалено {int(a / col)}+{int(b / col)} категорий')
-            if (a + b) == 0: break
-        print(f'всего {int(Category.count() / col)} категорий')
-        ### перемещаем "промежуточные" товары в новую папку
-        while True:
-            c = 0
-            for each in list(Category.categories.values()).copy():
-                if each.children_categories_count > 0 and each.children_products_count > 0:
-                    new_cat = Category.create_category(f'{each}|{new_cat_name}')
-                    for child in each.find_children(show_cats=False, show_products=True, text=False):
-                        child.move(each, new_cat)
-                    c += 1
-            if c: print(f'создано {c // col} новых категорий {new_cat_name}. итого {Category.count() // col} категорий')
-            if c == 0: break
-
-        for product in products.values():
-            product['category_ids2'] = Product.export_categories(product['sku'])
-        Category.clear()
-        Product.clear()
-
     @staticmethod
-    def __new_cat_name(lang):
-        if lang == 'de':
-            return 'Zubehör'
-        elif lang == 'en':
-            return 'Other'
-        elif lang == 'ru':
-            return 'Прочее'
+    def reorganize_categories(products, lang, col=1):
+        Category.Category.reorganize_categories(lang, col)
+        for product in products.values():
+            product['category_ids'] = Product.Product.export_categories(product['sku'])
+        Category.Category.clear()
+        Product.Product.clear()
 
     @classmethod
     def get_htmls_from_web(cls, url, simple=False, additional_func=None):
@@ -306,7 +273,7 @@ class Parsing:
                 if not next_img: continue
                 i += 1
                 data['media_gallery'] += f'|{next_img}'
-        if not data.get('image'): cls.get_logo_with_sku(data, path)
+        if not data.get('image'): cls.get_logo_with_sku(data, f'{path}_logos')
 
     @classmethod
     def get_logo_with_sku(cls, data, path='images'):
@@ -361,3 +328,27 @@ class Parsing:
             return wrapper2
 
         return wrapper1
+
+    @classmethod
+    def unwrap_links(cls, soup):
+        for tag in soup.find_all('a'):
+            href = tag.get('href', '')
+            # print(f'link unwrapped  {href}')
+            tag.unwrap()
+
+    @classmethod
+    def get_images(cls, soup, source_url='', target_url=''):
+        for tag in soup.find_all('img'):
+            src = urljoin(source_url, tag.get('src', ''))
+            print(f'got image  {src}')
+            filename = cls.get_file_from_web(src, name='', path='imgs')
+            tag.attrs.clear()
+            tag.attrs['src'] = f'{target_url}{filename}'
+
+    @classmethod
+    def correct_images_sources(cls, soup, source_url=''):
+        for tag in soup.find_all('img'):
+            src = urljoin(source_url, tag.get('src'))
+            print(f'got image  {src}')
+            tag.attrs.clear()
+            tag.attrs['src'] = src
