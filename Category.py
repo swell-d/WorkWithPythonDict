@@ -133,7 +133,7 @@ class Category:
 
     @classmethod
     def reorganize_categories(cls, lang, col=1):
-        new_cat_name = {'de': 'Zubehör', 'en': 'Other', 'ru': 'Прочее'}
+        new_cat_name = {'de': 'Mehr', 'en': 'More', 'ru': 'Разное'}
         print(f'всего {int(cls.count() / col)} категорий')
         while True:
             a, b = 0, 0

@@ -104,7 +104,7 @@ class Parsing:
         data['qty'] = 1000
         data['is_in_stock'] = 1
         data['tax_class_id'] = 'Vollbesteuerte Artikel' if lang != 'ru' else ''
-        data['attribute_set_name'] = 'Default' if lang != 'ru' else ''
+        data['attribute_set_name'] = 'Default'
 
     @staticmethod
     def minimalka(data):

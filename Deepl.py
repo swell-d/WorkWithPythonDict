@@ -25,19 +25,22 @@ class Deepl:
         text, source_lang, target_lang = Sw.clr(txt), source_lang.upper(), target_lang.upper()
         if not text: return ''
         db = cls.__get_db(target_lang)
-        if text in db: return db[text]
-        page = cls.__connect_to_API(text, source_lang, target_lang)
-        result = Sw.clr(json.loads(page.text)['translations'][0]['text'])
-        result = cls.__check_personal_dict(result)
-        cls.__save_stat_and_print(text, result, source_lang, target_lang)
-        db[text] = result
-        cls.__save_db()
+        if text in db:
+            result = db[text]
+            result = cls.__check_personal_dict(result)
+        else:
+            page = cls.__connect_to_API(text, source_lang, target_lang)
+            result = Sw.clr(json.loads(page.text)['translations'][0]['text'])
+            result = cls.__check_personal_dict(result)
+            cls.__save_stat_and_print(text, result, source_lang, target_lang)
+            db[text] = result
+            cls.__save_db()
         return result
 
     @classmethod
     def __check_personal_dict(cls, result):
         for key, value in cls.__personal_dict.items():
-            result.replace(key, value)
+            result = result.replace(key, value)
         return result
 
     @classmethod
