@@ -9,6 +9,7 @@ from datetime import datetime
 from openpyxl import Workbook
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
+from openpyxl.utils.exceptions import IllegalCharacterError
 
 from GlobalFunctions import print, print_run_time
 
@@ -70,7 +71,11 @@ class SaveDictToFile:
                 if not isinstance(value, (int, float)) or len(str(value)) > 10:
                     value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                 line.append(value)
-            ws.append(line)
+            try:
+                ws.append(line)
+            except IllegalCharacterError:
+                print(f'save_to_xlsx: IllegalCharacterError: {line}')  # Todo only for debug
+                ws.append([x.encode('unicode_escape').decode('utf-8') for x in line])
         cls.__view_enhancement(ws)
         wb.save(newfilename)
         print(f"{newfilename} / {i + 1} lines saved / ", end='')
@@ -146,11 +151,10 @@ class SaveDictToFileTests(unittest.TestCase):
                   '2': {'#': 2, 'first': '', 'second': 12345678901234567890, 'third': '"4""4'}}
 
     def test_save_to_xlsx(self):
-        file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_.xlsx'
         result = [['#', 'first', 'second', 'third'], ['1', '1\r\n1', '22.2', 'None'],
                   ['2', 'None', '12345678901234567890', '"4""4']]
         xlsx = []
-        SaveDictToFile.save_to_xlsx(self.__data)
+        file_name = SaveDictToFile.save_to_xlsx(self.__data)
         sheet = load_workbook(file_name).active
         for row in range(1, sheet.max_row + 1):
             row_data = []
@@ -159,30 +163,18 @@ class SaveDictToFileTests(unittest.TestCase):
             xlsx.append(row_data)
         self.assertEqual(result, xlsx)
         from LoadDictFromFile import LoadDictFromFile
-        self.assertEqual(self.__data_xlsx, LoadDictFromFile.load(file_name, recognize=True))
         self.assertEqual(self.__data_xlsx, LoadDictFromFile.load(file_name, maincolumn='#', recognize=True))
         os.remove(file_name)
 
     def test_save_to_csv(self):
-        file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_.csv'
         result = '"#","first","second","third"\r\n"1","1\r\n1","22,2",""\r\n"2","","12345678901234567890","""4""""4"\r\n'
-        SaveDictToFile.save_to_csv(self.__data)
+        file_name = SaveDictToFile.save_to_csv(self.__data)
         with codecs.open(file_name, 'r', encoding='utf-8') as file:
             csv = file.read()
         self.assertEqual(result, csv)
         from LoadDictFromFile import LoadDictFromFile
-        self.assertEqual(self.__data_csv, LoadDictFromFile.load(file_name, recognize=True))
         self.assertEqual(self.__data_csv, LoadDictFromFile.load(file_name, maincolumn='#', recognize=True))
         os.remove(file_name)
-
-    # def test_save_to_csv_old(self):
-    #     file_name = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")}_old.csv'
-    #     result = 'first,second,third\r\n"1\r\n1",22.2,\r\n,12345678901234567890,"""4""""4"\r\n'
-    #     SaveDictToFile._save_to_csv_old(self.__data, filename='old')
-    #     with codecs.open(file_name, 'r', encoding='utf-8') as file:
-    #         csv = file.read()
-    #     self.assertEqual(result, csv)
-    #     os.remove(file_name)
 
     def test_get_new_file_name(self):
         date = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
