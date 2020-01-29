@@ -1,17 +1,15 @@
 import codecs
 import copy
+import datetime
 import os
 import pathlib
 import re
 import unittest
-from datetime import datetime
 
-from openpyxl import Workbook
-from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
-from openpyxl.utils.exceptions import IllegalCharacterError
+import openpyxl
 
-from GlobalFunctions import print, print_run_time
+import GlobalFunctions
+from GlobalFunctions import print
 
 
 class SaveDictToFile:
@@ -50,17 +48,17 @@ class SaveDictToFile:
             for col, value in dims.items():
                 ws.column_dimensions[col].width = min(value + 2, 40)
 
-        ws.auto_filter.ref = f"A1:{get_column_letter(ws.max_column)}{ws.max_row}"
+        ws.auto_filter.ref = f"A1:{openpyxl.utils.get_column_letter(ws.max_column)}{ws.max_row}"
         ws.freeze_panes = ws['A2']
         auto_column_width()
 
     @classmethod
-    @print_run_time
+    @GlobalFunctions.print_run_time
     def save_to_xlsx(cls, data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
         if not cls.__check_data(data, filename): return None
         data, fieldnames = cls.__init(data, filename, fieldnames)
         newfilename = cls.get_new_file_name_with_datetime('.xlsx', filename, date_insert)
-        wb = Workbook()
+        wb = openpyxl.Workbook()
         ws = wb.active
         ws.append(['#'] + fieldnames)
         i = -1
@@ -73,7 +71,7 @@ class SaveDictToFile:
                 line.append(value)
             try:
                 ws.append(line)
-            except IllegalCharacterError:
+            except openpyxl.utils.exceptions.IllegalCharacterError:
                 print(f'save_to_xlsx: IllegalCharacterError: {line}')  # Todo only for debug
                 ws.append([x.encode('unicode_escape').decode('utf-8') for x in line])
         cls.__view_enhancement(ws)
@@ -93,14 +91,14 @@ class SaveDictToFile:
         if not date_insert:
             if '\\' in filename: pathlib.Path(filename[:filename.rfind('\\')]).mkdir(parents=True, exist_ok=True)
             return f'{filename}{filetype}'
-        date = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
+        date = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d_%H-%M")
         if '\\' not in filename: return f'{date}_{filename}{filetype}'
         last_pos = filename.rfind('\\')
         pathlib.Path(filename[:last_pos]).mkdir(parents=True, exist_ok=True)
         return f'{filename[:last_pos]}\\{date}_{filename[last_pos + 1:]}{filetype}'
 
     @classmethod
-    @print_run_time
+    @GlobalFunctions.print_run_time
     def save_to_csv(cls, data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
         if not cls.__check_data(data, filename): return None
         SEP, QC, NL = ',', '"', '\r\n'  # separator, quote char, new line
@@ -123,7 +121,7 @@ class SaveDictToFile:
         return newfilename
 
     # @classmethod
-    # @print_run_time
+    # @GlobalFunctions.print_run_time
     # def _save_to_csv_old(cls, data, filename='', fieldnames=None, optimize=False):
     #     data, fieldnames = cls.__init(data, filename, fieldnames)
     #     with codecs.open(f'{cls.__DATE}_{filename}.csv', 'w', encoding='utf-8') as file:
@@ -155,7 +153,7 @@ class SaveDictToFileTests(unittest.TestCase):
                   ['2', 'None', '12345678901234567890', '"4""4']]
         xlsx = []
         file_name = SaveDictToFile.save_to_xlsx(self.__data)
-        sheet = load_workbook(file_name).active
+        sheet = openpyxl.load_workbook(file_name).active
         for row in range(1, sheet.max_row + 1):
             row_data = []
             for column in range(1, sheet.max_column + 1):
@@ -177,7 +175,7 @@ class SaveDictToFileTests(unittest.TestCase):
         os.remove(file_name)
 
     def test_get_new_file_name(self):
-        date = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
+        date = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d_%H-%M")
         self.assertEqual('filename.xlsx',
                          SaveDictToFile.get_new_file_name_with_datetime('.xlsx', 'filename', date_insert=False))
         self.assertEqual(f'{date}_filename.xlsx',
@@ -187,6 +185,7 @@ class SaveDictToFileTests(unittest.TestCase):
                                                                         date_insert=False))
         self.assertEqual(f'C:\\tmp\\{date}_filename.xlsx',
                          SaveDictToFile.get_new_file_name_with_datetime('.xlsx', 'C:\\tmp\\filename', date_insert=True))
+
 
 if __name__ == '__main__':
     unittest.main()

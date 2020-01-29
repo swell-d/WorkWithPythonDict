@@ -1,6 +1,7 @@
 import codecs
 import pathlib
-from datetime import datetime
+
+import datetime.datetime
 
 
 class SwPrint:
@@ -11,12 +12,12 @@ class SwPrint:
     @classmethod
     def __init__(cls, debug=False):
         cls.__debug = debug
-        cls.__start_time = datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M")
+        cls.__start_time = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d_%H-%M")
 
     @classmethod
     def print(cls, text, only_debug=False, end='\n', without_datetime=False):
         if not cls.__debug and only_debug: return
-        new_text = f'{datetime.strftime(datetime.now(), "%Y-%m-%d_%H:%M:%S")}  ' if not without_datetime else ''
+        new_text = f'{datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d_%H:%M:%S")}  ' if not without_datetime else ''
         new_text += f'{str(text)}{end}'
         print(new_text, end='')
         cls.__log += new_text
@@ -28,4 +29,3 @@ class SwPrint:
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         with codecs.open(full_path, 'w', 'utf-8') as f:
             f.write(cls.__log)
-

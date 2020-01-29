@@ -1,7 +1,7 @@
 import functools
 import time
 
-from SwPrint import SwPrint
+import SwPrint
 
 
 def print_run_time(func):
@@ -10,15 +10,15 @@ def print_run_time(func):
         start_time = time.time()
         result = func(*args, **kwargs)
         func_without_datetime = ['_xlsx_import', '_xls_import', '_csv_import', 'save_to_xlsx', 'save_to_csv']
-        SwPrint.print(f'done in {generate_time_string(time.time() - start_time)}',
-                      without_datetime=func.__name__ in func_without_datetime)
+        SwPrint.SwPrint.print(f'done in {generate_time_string(time.time() - start_time)}',
+                              without_datetime=func.__name__ in func_without_datetime)
         return result
 
     return wrapper
 
 
 def print(text, only_debug=False, end='\n'):
-    SwPrint.print(text, only_debug, end)
+    SwPrint.SwPrint.print(text, only_debug, end)
 
 
 def generate_time_string(duration):

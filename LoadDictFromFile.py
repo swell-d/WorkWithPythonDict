@@ -4,12 +4,12 @@ import os
 import re
 import unittest
 
-from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
-from xlrd import open_workbook
+import openpyxl
+import xlrd
 
-from CheckTypes import CheckTypesRe as CheckTypes
-from GlobalFunctions import print, print_run_time
+import CheckTypes
+import GlobalFunctions
+from GlobalFunctions import print
 
 
 class LoadDictFromFile:
@@ -50,7 +50,7 @@ class LoadDictFromFile:
         for column in range(0, sheet.ncols):
             data = str(cls.__correct(sheet.cell(0, column).value, for_xls=True))
             if data == '':
-                data = get_column_letter(column + 1)
+                data = openpyxl.utils.get_column_letter(column + 1)
             else:
                 last_not_empty_column = column + 1
             titles_original.append(data)
@@ -63,14 +63,14 @@ class LoadDictFromFile:
         for column in range(1, sheet.max_column + 1):
             data = str(cls.__correct(sheet.cell(row=1, column=column).value))
             if data == '':
-                data = get_column_letter(column)
+                data = openpyxl.utils.get_column_letter(column)
             else:
                 last_not_empty_column = column
             titles_original.append(data)
         return titles_original[:last_not_empty_column]
 
     @classmethod
-    @print_run_time
+    @GlobalFunctions.print_run_time
     def _csv_import(cls, filename, maincolumn, language, optimize, recognize, delimiter):
         cls.__optimize, cls.__recognize = optimize, recognize
         imports = {}
@@ -79,7 +79,7 @@ class LoadDictFromFile:
             data = [row for row in reader]
         titles = cls.__titles(data[0], language)
         index = cls.__find_index(maincolumn, titles)
-        check_types = CheckTypes()
+        check_types = CheckTypes.CheckTypesRe()
         for a, row in enumerate(data[1:]):
             if not len(row): continue
             name = str(cls.__correct(row[index]) if index is not None else a + 2)
@@ -91,11 +91,11 @@ class LoadDictFromFile:
         return imports
 
     @classmethod
-    @print_run_time
+    @GlobalFunctions.print_run_time
     def _xls_import(cls, filename, maincolumn, language, optimize, recognize, delimiter):
         cls.__optimize, cls.__recognize = optimize, recognize
         imports = {}
-        sheet = open_workbook(filename).sheet_by_index(0)
+        sheet = xlrd.open_workbook(filename).sheet_by_index(0)
         titles = cls.__titles(cls.__xls_titles(sheet), language)
         index = cls.__find_index(maincolumn, titles)
         for a in range(1, sheet.nrows):
@@ -108,11 +108,11 @@ class LoadDictFromFile:
         return imports
 
     @classmethod
-    @print_run_time
+    @GlobalFunctions.print_run_time
     def _xlsx_import(cls, filename, maincolumn, language, optimize, recognize, delimiter):
         cls.__optimize, cls.__recognize = optimize, recognize
         imports = {}
-        sheet = load_workbook(filename).active
+        sheet = openpyxl.load_workbook(filename).active
         titles = cls.__titles(cls.__xlsx_titles(sheet), language)
         index = cls.__find_index(maincolumn, titles)
         for a in range(2, sheet.max_row + 1):

@@ -3,8 +3,8 @@ import unittest
 
 import requests
 
-from TextCorrections import TextCorrections as Sw
-from WorkWithJSON import WorkWithJSON
+import Sw
+import WorkWithJSON
 
 
 class Deepl:

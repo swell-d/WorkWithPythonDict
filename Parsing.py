@@ -1,32 +1,28 @@
 import codecs
 import os
 import pathlib
+import shutil
 import time
-from shutil import copyfile
-from urllib.parse import quote, unquote, urljoin
+import urllib.parse
 
+import PIL
+import bs4
+import fake_useragent
 import requests
+import selenium
 import urllib3
-from PIL import Image, ImageDraw, ImageFont
-from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
-from selenium import webdriver
 
 import Category
+import GlobalFunctions
 import Product
-from GlobalFunctions import print, generate_time_string
-from SwPrint import SwPrint
-from TextCorrections import TextCorrections as Sw
-
-
-# from selenium.webdriver.support.ui import Select, WebDriverWait
-# from selenium.webdriver.support import expected_conditions as EC
-# from selenium.webdriver.common.by import By
+import Sw
+import SwPrint
+from GlobalFunctions import print
 
 
 class Parsing:
     _driver = None
-    _headers = {'User-Agent': UserAgent().chrome}
+    _headers = {'User-Agent': fake_useragent.UserAgent().chrome}
 
     @staticmethod
     def check_sku(sku, url, good_symbols=' .-+/'):
@@ -48,8 +44,8 @@ class Parsing:
         sku = Sw.clr(sku).strip(' .,')
         if not cls.check_sku(sku, url='simple_product', good_symbols=good_symbols): return None
         addon = Sw.clr(addon).upper()
-        brand = Sw.clr(brand, frst_bg=True)
-        name = Sw.clr(name, frst_bg=True).strip(' .,')
+        brand = Sw.clr(brand, start_with_big=True)
+        name = Sw.clr(name, start_with_big=True).strip(' .,')
 
         data = {}
         data['url'] = 'simple_product'
@@ -91,7 +87,7 @@ class Parsing:
     @classmethod
     def get_good_html(cls, text):
         if text == '': return ''
-        return Sw.clr(BeautifulSoup(text, 'lxml').body)[6:-7]
+        return Sw.clr(bs4.BeautifulSoup(text, 'lxml').body)[6:-7]
 
     @staticmethod
     def same_for_all(data, lang):
@@ -99,7 +95,7 @@ class Parsing:
         sku = Sw.transliterate(data['herstellernummer'])
         url_key = f"{brand}_{sku}".strip('_').lower()
         url_key = url_key.replace('/', '-').replace('\\', '-').replace(' ', '-').replace('+', '-').replace('.', '-')
-        data['url_key'] = quote(url_key)
+        data['url_key'] = urllib.parse.quote(url_key)
         data['status'] = 1
         data['qty'] = 1000
         data['is_in_stock'] = 1
@@ -146,12 +142,12 @@ class Parsing:
 
     @classmethod
     def _create_web_driver(cls, url):
-        chrome_options = webdriver.ChromeOptions()
+        chrome_options = selenium.webdriver.ChromeOptions()
         chrome_options.add_argument("--start-maximized")
         prefs = {"profile.managed_default_content_settings.images": 2}
         chrome_options.add_experimental_option("prefs", prefs)
-        cls._driver = webdriver.Chrome('C:\\Users\\Administrator\\Documents\\_python\\chromedriver.exe',
-                                       chrome_options=chrome_options)
+        cls._driver = selenium.webdriver.Chrome('C:\\Users\\Administrator\\Documents\\_python\\chromedriver.exe',
+                                                chrome_options=chrome_options)
         cls._driver.implicitly_wait(10)
         cls._driver.get(url)
         input('продолжить?')
@@ -213,7 +209,7 @@ class Parsing:
 
     @classmethod
     def get_file_from_web(cls, url, name, path='images'):
-        if not name: name = unquote(url[url.rfind('/') + 1:url.rfind('.')])
+        if not name: name = urllib.parse.unquote(url[url.rfind('/') + 1:url.rfind('.')])
         name = Sw.good_name(name)
         cache_path = Sw.get_cache_path(url)
         right_part = url[url.rfind('/') + 1:]
@@ -248,11 +244,11 @@ class Parsing:
     def _copyfile(cls, url, cache_path, new_path, file_type, path):
         if os.stat(cache_path).st_size == 0: return None  # Todo try to download one more time
         if 'images' in path and file_type in ['.jpg', '.png', '.gif']:
-            img = Image.open(cache_path)
+            img = PIL.Image.open(cache_path)
             if (img.size[0] + img.size[1]) < 200: return None
         print(f'copy file  {url}', only_debug=True)
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
-        copyfile(cache_path, new_path)
+        shutil.copyfile(cache_path, new_path)
         return True
 
     @classmethod
@@ -291,9 +287,9 @@ class Parsing:
         full_path = f'{path}\\{file_name}'
         if os.path.exists(full_path): return file_name
         print(f'generate img  {full_path}')
-        fnt = ImageFont.truetype('C:\Windows\Fonts\Arial.ttf', 60)
-        img = Image.open('logo.png').convert('RGB')
-        d = ImageDraw.Draw(img)
+        fnt = PIL.ImageFont.truetype('C:\Windows\Fonts\Arial.ttf', 60)
+        img = PIL.Image.open('logo.png').convert('RGB')
+        d = PIL.ImageDraw.Draw(img)
         d.text((60, 880), sku, fill=0, font=fnt)
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         img.save(full_path, quality=100, optimize=True, progressive=True)
@@ -317,13 +313,13 @@ class Parsing:
         def wrapper1(func):
             def wrapper2(*args, **kwargs):
                 start_time = time.time()
-                SwPrint(debug=debug)
+                SwPrint.SwPrint(debug=debug)
                 print('start')
                 result = func(*args, **kwargs)
-                print(f'done in {generate_time_string(time.time() - start_time)}')
+                print(f'done in {GlobalFunctions.generate_time_string(time.time() - start_time)}')
                 print(f'end')
                 cls.driver_quit()
-                SwPrint.save_log_to_file()
+                SwPrint.SwPrint.save_log_to_file()
                 return result
 
             return wrapper2
@@ -340,7 +336,7 @@ class Parsing:
     @classmethod
     def get_images(cls, soup, source_url='', target_url=''):
         for tag in soup.find_all('img'):
-            src = urljoin(source_url, tag.get('src', ''))
+            src = urllib.parse.urljoin(source_url, tag.get('src', ''))
             print(f'got image  {src}')
             filename = cls.get_file_from_web(src, name='', path='imgs')
             tag.attrs.clear()
@@ -349,7 +345,7 @@ class Parsing:
     @classmethod
     def correct_images_sources(cls, soup, source_url=''):
         for tag in soup.find_all('img'):
-            src = urljoin(source_url, tag.get('src'))
+            src = urllib.parse.urljoin(source_url, tag.get('src'))
             print(f'got image  {src}')
             tag.attrs.clear()
             tag.attrs['src'] = src
