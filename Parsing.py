@@ -318,6 +318,7 @@ class Parsing:
             def wrapper2(*args, **kwargs):
                 start_time = time.time()
                 SwPrint(debug=debug)
+                print('start')
                 result = func(*args, **kwargs)
                 print(f'done in {generate_time_string(time.time() - start_time)}')
                 print(f'end')
@@ -332,7 +333,7 @@ class Parsing:
     @classmethod
     def unwrap_links(cls, soup):
         for tag in soup.find_all('a'):
-            href = tag.get('href', '')
+            # href = tag.get('href', '')
             # print(f'link unwrapped  {href}')
             tag.unwrap()
 
