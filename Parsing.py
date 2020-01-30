@@ -5,7 +5,9 @@ import shutil
 import time
 import urllib.parse
 
-import PIL
+import PIL.Image
+import PIL.ImageDraw
+import PIL.ImageFont
 import bs4
 import fake_useragent
 import requests
