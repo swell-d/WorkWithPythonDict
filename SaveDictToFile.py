@@ -136,8 +136,8 @@ class SaveDictToFile:
 
     @classmethod
     def save_to_files(cls, data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
-        cls.save_to_xlsx(data, filename, fieldnames, optimize, open, date_insert)
-        cls.save_to_csv(data, filename, fieldnames, optimize, open, date_insert)
+        return (cls.save_to_xlsx(data, filename, fieldnames, optimize, open, date_insert), \
+                cls.save_to_csv(data, filename, fieldnames, optimize, open, date_insert))
 
 
 class SaveDictToFileTests(unittest.TestCase):

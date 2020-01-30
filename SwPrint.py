@@ -1,7 +1,6 @@
 import codecs
+import datetime
 import pathlib
-
-import datetime.datetime
 
 
 class SwPrint:
