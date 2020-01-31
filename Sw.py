@@ -141,7 +141,7 @@ def transliterate(string):
     return translit_string
 
 
-class TextCorrectionsTests(unittest.TestCase):
+class SwTests(unittest.TestCase):
     def test_clr(self):
         self.assertEqual('', clr(' '))
         self.assertEqual('', clr('\n'))

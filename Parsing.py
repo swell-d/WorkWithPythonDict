@@ -11,7 +11,7 @@ import PIL.ImageFont
 import bs4
 import fake_useragent
 import requests
-import selenium
+import selenium.webdriver
 import urllib3
 
 import Category
@@ -148,8 +148,9 @@ class Parsing:
         chrome_options.add_argument("--start-maximized")
         prefs = {"profile.managed_default_content_settings.images": 2}
         chrome_options.add_experimental_option("prefs", prefs)
-        cls._driver = selenium.webdriver.Chrome('C:\\Users\\Administrator\\Documents\\_python\\chromedriver.exe',
-                                                chrome_options=chrome_options)
+        cls._driver = selenium.webdriver.Chrome(
+            'C:\\Users\\Administrator\\Documents\\_python\\webdriver\\chromedriver.exe',
+            options=chrome_options)
         cls._driver.implicitly_wait(10)
         cls._driver.get(url)
         input('продолжить?')

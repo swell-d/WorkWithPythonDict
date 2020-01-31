@@ -4,13 +4,13 @@ import Product
 class Category:
     categories = {}
 
-    def __init__(self, name, parent, en_name=None):
+    def __init__(self, name, parent, en_name=None, entity_id=''):
         if not (name and isinstance(name, str)): raise ValueError('Category_init')
         self.name = name
         if not (parent is None or isinstance(parent, Category)): raise ValueError('Category_init')
         self.parent = parent
         if parent: self.parent.children.add(self)
-        self.entity_id = ''
+        self.entity_id = entity_id
         self.children = set()
         self.categories[str(self)] = self
         self.position = '1'
@@ -76,7 +76,7 @@ class Category:
         product.categories.add(self)
 
     @classmethod
-    def create_category(cls, path, en_path=None):
+    def create_category(cls, path, en_path=None, entity_id=''):
         if not isinstance(path, str): raise ValueError('Category_create_category')
         if not (en_path is None or isinstance(path, str)): raise ValueError('Category_create_category')
         path = path.split('|')
@@ -90,7 +90,12 @@ class Category:
             find_result = cls.categories.get(check_path, None)
             if not find_result:
                 parent_path = '|'.join(path[0:i])
-                find_result = Category(path[i], cls.categories.get(parent_path, None), en_path[i] if en_path else None)
+                find_result = Category(
+                    path[i],
+                    cls.categories.get(parent_path, None),
+                    en_path[i] if en_path else None,
+                    entity_id if (i == len(path) - 1) else ''
+                )
         return find_result
 
     def export(self):
@@ -163,3 +168,18 @@ class Category:
             if c: print(f'создано {c // col} новых категорий {new_cat_name[lang]}. '
                         f'итого {cls.count() // col} категорий')
             if c == 0: break
+
+    @classmethod
+    def find_english_names(cls, site_categories, products):
+        import LoadDictFromFile
+        for each in site_categories.values():
+            full_path = f"{each['path']}|{each['name']}"
+            full_path_en = LoadDictFromFile.LoadDictFromFile.find_value(products, 'category_ids', full_path)
+            if not full_path_en: continue
+            cls.create_category(
+                full_path,
+                en_path=full_path_en.get('category_ids_en', ''),
+                entity_id=each['entity_id'])
+        for each in site_categories.values():
+            find_result = cls.categories.get(f"{each['path']}|{each['name']}", None)
+            if find_result: each['new_name'] = find_result.en_name

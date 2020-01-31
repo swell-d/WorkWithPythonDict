@@ -53,7 +53,7 @@ class Html:
                f'allowfullscreen></iframe><br><br>'
 
 
-class Tests(unittest.TestCase):
+class TextCorrectionsTests(unittest.TestCase):
     def test_digits(self):
         obj = FindDigits()
         self.assertEqual('', obj.find_floats('')[0])

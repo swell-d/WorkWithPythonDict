@@ -47,7 +47,7 @@ class CheckTypesTry(CheckTypes):
             return False
 
 
-class CheckTypesTest(unittest.TestCase):
+class CheckTypesTests(unittest.TestCase):
     def test_int(self, cl=None):
         if cl is None: return
         good_values = ['-1', '0', '1']
