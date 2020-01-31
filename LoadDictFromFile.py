@@ -79,12 +79,12 @@ class LoadDictFromFile:
             data = [row for row in reader]
         titles = cls.__titles(data[0], language)
         index = cls.__find_index(maincolumn, titles)
-        check_types = CheckTypes.CheckTypesRe()
+        if recognize: check_types = CheckTypes.CheckTypesRe()
         for a, row in enumerate(data[1:]):
             if not len(row): continue
             name = str(cls.__correct(row[index]) if index is not None else a + 2)
             if name: imports[name] = {
-                titles[i]: check_types.return_int_str(cls.__correct(row[i])) if recognize else cls.__correct(row[i])
+                titles[i]: check_types.return_int_or_str(cls.__correct(row[i])) if recognize else cls.__correct(row[i])
                 for i in range(0, len(titles))}
         print(f"{filename} / {len(data) - 1} lines / {len(imports)} loaded / {len(data) - 1 - len(imports)} lost / ",
               end='')

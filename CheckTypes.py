@@ -1,46 +1,54 @@
 import re
 import unittest
+from abc import ABC, abstractmethod
 
 
-class CheckTypes:
-    @classmethod
-    def return_int_str(cls, text):
-        text = str(text)
-        if cls.isint(text): return int(text)
+class CheckTypes(ABC):
+    def return_int_or_str(self, txt):
+        text = str(txt)
+        if self.isint(text): return int(text)
         return text
 
-    @classmethod
-    def return_int_float_str(cls, text):
-        text = str(text)
-        if cls.isint(text): return int(text)
-        if cls.isfloat(text.replace(',', '.')): return float(text.replace(',', '.'))
+    def return_int_float_str(self, txt):
+        text = str(txt)
+        if self.isint(text): return int(text)
+        if self.isfloat(text.replace(',', '.')): return float(text.replace(',', '.'))
         return text
+
+    @abstractmethod
+    def isint(self, txt):
+        pass
+
+    @abstractmethod
+    def isfloat(self, txt):
+        pass
 
 
 class CheckTypesRe(CheckTypes):
     __int_compile = re.compile("^0$|^-?[1-9]\\d*$")
     __float_compile = re.compile("^0$|^-?0[.]\\d+$|^-?[1-9]\\d*([.]\\d+)?$")
 
-    @classmethod
-    def isint(cls, text):
-        return True if re.match(cls.__int_compile, str(text)) else False
+    def isint(self, txt):
+        text = str(txt)
+        return True if re.match(self.__int_compile, text) else False
 
-    @classmethod
-    def isfloat(cls, text):
-        if len(str(text)) > 17: return False
-        return True if re.match(cls.__float_compile, str(text)) else False
+    def isfloat(self, txt):
+        text = str(txt)
+        if len(text) > 17: return False
+        return True if re.match(self.__float_compile, text) else False
 
 
 class CheckTypesTry(CheckTypes):
-    @staticmethod
-    def isint(text):
-        try: return str(int(text)) == str(text)
-        except: return False
-
-    @staticmethod
-    def isfloat(text):
+    def isint(self, txt):
         try:
-            text = str(text)
+            text = str(txt)
+            return str(int(text)) == text
+        except:
+            return False
+
+    def isfloat(self, txt):
+        try:
+            text = str(txt)
             if text == '-0': return False
             return str(float(text)) == (text if '.' in text else f'{text}.0')
         except:
@@ -48,33 +56,33 @@ class CheckTypesTry(CheckTypes):
 
 
 class CheckTypesTests(unittest.TestCase):
-    def test_int(self, cl=None):
-        if cl is None: return
+    def test_int(self, obj=None):
+        if obj is None: return
         good_values = ['-1', '0', '1']
         bad_values = ['', ' ', '-', '+', '00', '01', '0123', '-0', '-00', '-01', '-0123', ' 1', '1.']
         for val in good_values:
-            self.assertTrue(cl.isint(val), msg=val)
+            self.assertTrue(obj.isint(val), msg=val)
         for val in bad_values:
-            self.assertFalse(cl.isint(val), msg=val)
+            self.assertFalse(obj.isint(val), msg=val)
 
-    def test_float(self, cl=None):
-        if cl is None: return
+    def test_float(self, obj=None):
+        if obj is None: return
         good_values = ['-1', '0', '1', '-1.0', '1.0', '-0.1', '0.1', '911', '0.001']
         bad_values = ['', ' ', '-', '+', '00', '01', '0123', '-0', '-00', '-01', '-0123',
                       '00.0', '01.', '-01.', '.1', '-.1', '1-', ' 1', '1 ', '-001',
                       '0.1.1', '1..1', '0..1', '23.3.4']
         for val in good_values:
-            self.assertTrue(cl.isfloat(val), msg=val)
+            self.assertTrue(obj.isfloat(val), msg=val)
         for val in bad_values:
-            self.assertFalse(cl.isfloat(val), msg=val)
+            self.assertFalse(obj.isfloat(val), msg=val)
 
     def testRe(self):
-        self.test_int(CheckTypesRe)
-        self.test_float(CheckTypesRe)
+        self.test_int(CheckTypesRe())
+        self.test_float(CheckTypesRe())
 
     def testTry(self):
-        self.test_int(CheckTypesTry)
-        self.test_float(CheckTypesTry)
+        self.test_int(CheckTypesTry())
+        self.test_float(CheckTypesTry())
 
 
 if __name__ == '__main__':
