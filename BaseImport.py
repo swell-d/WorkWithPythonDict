@@ -15,14 +15,17 @@ from SaveDictToFile import SaveDictToFile
 from TextCorrections import FindDigits, Html
 from my_modules2 import param_list_extend
 
+
 # from selenium.webdriver.common.action_chains import ActionChains
 
-if __name__ == '__main__':  # need for "Optimize imports"
-    time.time()
-    urllib.parse.urljoin()
-    bs4.BeautifulSoup()
-    bs4.Comment()
-    # ActionChains()
+def tmp():  # need for "Optimize imports"
+    time()
+    urllib()
+    bs4()
+    Category()
+    Product()
+    Sw()
+    WorkWithJSON()
     Deepl()
     print()
     LoadDictFromFile()
@@ -30,8 +33,4 @@ if __name__ == '__main__':  # need for "Optimize imports"
     SaveDictToFile()
     FindDigits()
     Html()
-    Sw()
-    WorkWithJSON.load_dict_from_json()
     param_list_extend()
-    Category()
-    Product()

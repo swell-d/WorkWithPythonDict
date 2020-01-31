@@ -1,5 +1,4 @@
 import unittest
-from unittest import TestSuite
 
 from CheckTypes import CheckTypesTests
 from Deepl import DeeplTests
@@ -9,19 +8,14 @@ from Sw import SwTests
 from TextCorrections import TextCorrectionsTests
 
 
-def load_tests(loader, tests, pattern):
-    suite = TestSuite()
-    for test_class in (
-            CheckTypesTests,
-            DeeplTests,
-            LoadDictFromFileTests,
-            SaveDictToFileTests,
-            SwTests,
-            TextCorrectionsTests
-    ):
-        tests = loader.loadTestsFromTestCase(test_class)
-        suite.addTests(tests)
-    return suite
+def tmp():
+    CheckTypesTests()
+    DeeplTests()
+    LoadDictFromFileTests()
+    SaveDictToFileTests()
+    SwTests()
+    TextCorrectionsTests()
 
 
-unittest.main(verbosity=2)
+if __name__ == '__main__':
+    unittest.main(verbosity=0)
