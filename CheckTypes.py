@@ -1,9 +1,9 @@
+import abc
 import re
 import unittest
-from abc import ABC, abstractmethod
 
 
-class CheckTypes(ABC):
+class CheckTypes(abc.ABC):
     def return_int_or_str(self, txt):
         text = str(txt)
         if self.isint(text): return int(text)
@@ -15,11 +15,11 @@ class CheckTypes(ABC):
         if self.isfloat(text.replace(',', '.')): return float(text.replace(',', '.'))
         return text
 
-    @abstractmethod
+    @abc.abstractmethod
     def isint(self, txt):
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def isfloat(self, txt):
         pass
 
