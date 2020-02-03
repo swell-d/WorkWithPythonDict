@@ -348,3 +348,25 @@ class Parsing:
             print(f'got image  {src}')
             tag.attrs.clear()
             tag.attrs['src'] = src
+
+    @classmethod
+    def summ(cls, file_de, file_en):
+        import LoadDictFromFile
+        import SaveDictToFile
+        from my_modules2 import param_list_extend
+        if file_de and file_en:
+            file_de = LoadDictFromFile.LoadDictFromFile.load(file_de)
+            file_en = LoadDictFromFile.LoadDictFromFile.load(file_en)
+            for each in file_de.values():
+                if each['sku'] in file_en:
+                    each['name_en'] = file_en[each['sku']].get('name', '')
+                    each['short_description_en'] = file_en[each['sku']].get('short_description', '')
+                    each['description_en'] = file_en[each['sku']].get('description', '')
+                    each['category_ids_en'] = file_en[each['sku']].get('category_ids', '')
+                else:
+                    each['no_en'] = 'x'
+            SaveDictToFile.SaveDictToFile.save_to_xlsx(
+                file_de,
+                filename=f'products',
+                fieldnames=param_list_extend(),
+                optimize=True)
