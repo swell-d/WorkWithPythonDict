@@ -308,10 +308,6 @@ class Parsing:
             print(f'=== file not found  {url}')
 
     @classmethod
-    def driver_quit(cls):
-        if cls._driver: cls._driver.quit()
-
-    @classmethod
     def start_stop_decorator(cls, debug=False):
         def wrapper1(func):
             def wrapper2(*args, **kwargs):
@@ -319,9 +315,9 @@ class Parsing:
                 SwPrint.SwPrint(debug=debug)
                 print('start')
                 result = func(*args, **kwargs)
+                if cls._driver: cls._driver.quit()
                 print(f'done in {GlobalFunctions.generate_time_string(time.time() - start_time)}')
                 print(f'end')
-                cls.driver_quit()
                 SwPrint.SwPrint.save_log_to_file()
                 return result
 
