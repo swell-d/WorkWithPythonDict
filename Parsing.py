@@ -333,13 +333,23 @@ class Parsing:
             tag.unwrap()
 
     @classmethod
-    def get_images(cls, soup, source_url='', target_url=''):
+    def get_images(cls, soup, source_url='', target_url='', path='imgs'):
         for tag in soup.find_all('img'):
             src = urllib.parse.urljoin(source_url, tag.get('src', ''))
-            print(f'got image  {src}')
-            filename = cls.get_file_from_web(src, name='', path='imgs')
-            tag.attrs.clear()
+            # print(f'got image {source_url} {src}')
+            filename = cls.get_file_from_web(src, name='', path=path)
+            if 'svg' not in filename: tag.attrs.clear()
             tag.attrs['src'] = f'{target_url}{filename}'
+
+    @classmethod
+    def get_images_from_links(cls, soup, source_url='', target_url='', path='imgs'):
+        for tag in soup.find_all('a'):
+            src = urllib.parse.urljoin(source_url, tag.get('href', ''))
+            if not src.endswith('.jpg'): continue
+            filename = cls.get_file_from_web(src, name='', path=path)
+            tag.attrs.clear()
+            tag.attrs['href'] = f'{target_url}{filename}'
+            tag.attrs['target'] = '_blank'
 
     @classmethod
     def correct_images_sources(cls, soup, source_url=''):
