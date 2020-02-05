@@ -345,7 +345,7 @@ class Parsing:
     def get_images_from_links(cls, soup, source_url='', target_url='', path='imgs'):
         for tag in soup.find_all('a'):
             src = urllib.parse.urljoin(source_url, tag.get('href', ''))
-            if not src.endswith('.jpg'): continue
+            if not src.endswith('.jpg') and not src.endswith('.pdf'): continue
             filename = cls.get_file_from_web(src, name='', path=path)
             tag.attrs.clear()
             tag.attrs['href'] = f'{target_url}{filename}'
