@@ -4,18 +4,19 @@ import urllib.parse
 import bs4
 
 import Category
+import Deepl
+import FindDigits
+import Html
 import LoadDictFromFile
+import Parsing
 import Product
 import SaveDictToFile
 import Sw
 import WorkWithJSON
-from Deepl import Deepl
 from GlobalFunctions import print
-from Parsing import Parsing
-from TextCorrections import FindDigits, Html
-from my_modules2 import param_list_extend
 
 
+# from SaveDictToFile import _param_list_extend as param_list_extend
 # from selenium.webdriver.common.action_chains import ActionChains
 
 def tmp():  # need for "Optimize imports"
@@ -23,14 +24,13 @@ def tmp():  # need for "Optimize imports"
     urllib()
     bs4()
     Category()
-    Product()
-    Sw()
-    WorkWithJSON()
     Deepl()
-    print()
-    LoadDictFromFile()
-    Parsing()
-    SaveDictToFile()
     FindDigits()
     Html()
-    param_list_extend()
+    LoadDictFromFile()
+    Parsing()
+    Product()
+    SaveDictToFile()
+    Sw()
+    WorkWithJSON()
+    print()

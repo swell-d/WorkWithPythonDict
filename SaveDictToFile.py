@@ -124,6 +124,52 @@ def save_to_files(data, filename='', fieldnames=None, optimize=False, open=False
             save_to_csv(data, filename, fieldnames, optimize, open, date_insert))
 
 
+def _param_list_extend():
+    return [
+        # main
+        'url'
+        'sku',
+        'manufacturer',  # may be ident
+        'herstellernummer',
+        'category_ids',
+        'name',
+        'short_description',
+        'description',
+
+        # images
+        'image',
+        'small_image',
+        'thumbnail',
+        'media_gallery',
+        'logo',
+
+        # dop
+        'weight',
+        'ean',
+
+        # same_for_all
+        'url_key',
+        'status',  # ident
+        'qty',  # ident
+        'is_in_stock',  # ident
+        'tax_class_id',  # ident
+        'attribute_set_name',  # ident
+
+        # specific
+        'websites',  # ident
+        'lieferant',  # ident
+        'am_shipping_type',  # ident
+        'country_of_manufacture',  # may be ident
+        'delivery_time',
+        'relation',  # через ||
+
+        # price
+        'price',
+        'special_price'
+        # 'original_price',
+    ]
+
+
 class SaveDictToFileTests(unittest.TestCase):
     __data = {'elem1': {'first': '1\r\n1', 'second': 22.2},
               'elem2': {'second': 12345678901234567890, 'third': '"4""4', 'fourth': ''}}
