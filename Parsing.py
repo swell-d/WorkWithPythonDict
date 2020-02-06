@@ -365,8 +365,8 @@ class Parsing:
         import SaveDictToFile
         from my_modules2 import param_list_extend
         if file_de and file_en:
-            file_de = LoadDictFromFile.LoadDictFromFile.load(file_de)
-            file_en = LoadDictFromFile.LoadDictFromFile.load(file_en)
+            file_de = LoadDictFromFile.load(file_de)
+            file_en = LoadDictFromFile.load(file_en)
             for each in file_de.values():
                 if each['sku'] in file_en:
                     each['name_en'] = file_en[each['sku']].get('name', '')
@@ -375,7 +375,7 @@ class Parsing:
                     each['category_ids_en'] = file_en[each['sku']].get('category_ids', '')
                 else:
                     each['no_en'] = 'x'
-            SaveDictToFile.SaveDictToFile.save_to_xlsx(
+            SaveDictToFile.save_to_xlsx(
                 file_de,
                 filename=f'products',
                 fieldnames=param_list_extend(),

@@ -83,7 +83,7 @@ class Category:
         if en_path:
             en_path = en_path.split('|')
             if len(path) != len(en_path):
-                print('=== разная длина пути категорий  {path}  {en_path}')
+                print(f'=== разная длина пути категорий  {path}  {en_path}')
                 en_path = None
         for i in range(len(path)):
             check_path = '|'.join(path[0:i + 1])
@@ -174,12 +174,25 @@ class Category:
         import LoadDictFromFile
         for each in site_categories.values():
             full_path = f"{each['path']}|{each['name']}"
-            full_path_en = LoadDictFromFile.LoadDictFromFile.find_value(products, 'category_ids', full_path)
-            if not full_path_en: continue
-            cls.create_category(
-                full_path,
-                en_path=full_path_en.get('category_ids_en', ''),
-                entity_id=each['entity_id'])
+            full_path_en = LoadDictFromFile.find_value(products, 'category_ids', full_path)
+            if full_path_en:
+                cls.create_category(
+                    full_path,
+                    en_path=full_path_en.get('category_ids_en', ''),
+                    entity_id=each['entity_id'])
+        cls.__add_column_with_english_name(site_categories)
+
+    @classmethod
+    def find_english_names2(cls, site_categories, products):
+        for each in products.values():
+            cls.create_category(each['category_ids'], en_path=each['category_ids_en'])
+        cls.__add_column_with_english_name(site_categories)
+
+    @classmethod
+    def __add_column_with_english_name(cls, site_categories):
         for each in site_categories.values():
             find_result = cls.categories.get(f"{each['path']}|{each['name']}", None)
-            if find_result: each['new_name'] = find_result.en_name
+            if find_result:
+                each['name_en'] = find_result.en_name
+            else:
+                print(f'=== category {find_result} not found')

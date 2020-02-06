@@ -4,14 +4,14 @@ import urllib.parse
 import bs4
 
 import Category
+import LoadDictFromFile
 import Product
+import SaveDictToFile
 import Sw
 import WorkWithJSON
 from Deepl import Deepl
 from GlobalFunctions import print
-from LoadDictFromFile import LoadDictFromFile
 from Parsing import Parsing
-from SaveDictToFile import SaveDictToFile
 from TextCorrections import FindDigits, Html
 from my_modules2 import param_list_extend
 
