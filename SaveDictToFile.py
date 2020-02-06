@@ -171,12 +171,8 @@ def _param_list_extend():
 
 
 class SaveDictToFileTests(unittest.TestCase):
-    __data = {'elem1': {'first': '1\r\n1', 'second': 22.2},
-              'elem2': {'second': 12345678901234567890, 'third': '"4""4', 'fourth': ''}}
-    __data_xlsx = {'1': {'#': 1, 'first': '1\r\n1', 'second': 22.2, 'third': ''},
-                   '2': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
-    __data_csv = {'1': {'#': 1, 'first': '1\r\n1', 'second': '22,2', 'third': ''},
-                  '2': {'#': 2, 'first': '', 'second': 12345678901234567890, 'third': '"4""4'}}
+    __data = {'2': {'#': '1', 'first': '1\r\n1', 'second': '22.2', 'third': ''},
+              '3': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
 
     def test_save_to_xlsx(self):
         result = [['#', 'first', 'second', 'third'], ['1', '1\r\n1', '22.2', 'None'],
@@ -191,17 +187,17 @@ class SaveDictToFileTests(unittest.TestCase):
             xlsx.append(row_data)
         self.assertEqual(result, xlsx)
         import LoadDictFromFile
-        self.assertEqual(self.__data_xlsx, LoadDictFromFile.load(file_name, maincolumn='#', recognize=True))
+        self.assertEqual(self.__data, LoadDictFromFile.load(file_name))
         os.remove(file_name)
 
     def test_save_to_csv(self):
-        result = '"#","first","second","third"\r\n"1","1\r\n1","22,2",""\r\n"2","","12345678901234567890","""4""""4"\r\n'
+        result = '"#","first","second","third"\r\n"1","1\r\n1","22.2",""\r\n"2","","12345678901234567890","""4""""4"\r\n'
         file_name = save_to_csv(self.__data)
         with codecs.open(file_name, 'r', encoding='utf-8') as file:
             csv = file.read()
         self.assertEqual(result, csv)
         import LoadDictFromFile
-        self.assertEqual(self.__data_csv, LoadDictFromFile.load(file_name, maincolumn='#', recognize=True))
+        self.assertEqual(self.__data, LoadDictFromFile.load(file_name))
         os.remove(file_name)
 
     def test_get_new_file_name(self):
@@ -211,8 +207,7 @@ class SaveDictToFileTests(unittest.TestCase):
         self.assertEqual(f'{date}_filename.xlsx',
                          _get_new_file_name_with_datetime('.xlsx', 'filename', date_insert=True))
         self.assertEqual('C:\\tmp\\filename.xlsx',
-                         _get_new_file_name_with_datetime('.xlsx', 'C:\\tmp\\filename',
-                                                          date_insert=False))
+                         _get_new_file_name_with_datetime('.xlsx', 'C:\\tmp\\filename', date_insert=False))
         self.assertEqual(f'C:\\tmp\\{date}_filename.xlsx',
                          _get_new_file_name_with_datetime('.xlsx', 'C:\\tmp\\filename', date_insert=True))
 

@@ -38,7 +38,7 @@ class CheckTypesRe(CheckTypes):
         return True if re.match(self.__float_compile, text) else False
 
 
-class CheckTypesTry(CheckTypes):
+class CheckTypesSwTry(CheckTypes):
     def isint(self, txt):
         try:
             text = str(txt)
@@ -51,6 +51,25 @@ class CheckTypesTry(CheckTypes):
             text = str(txt)
             if text == '-0': return False
             return str(float(text)) == (text if '.' in text else f'{text}.0')
+        except:
+            return False
+
+
+class CheckTypesTry():
+    @staticmethod
+    def isint(txt):
+        if txt == '': return True
+        try:
+            return float(int(txt)) == float(txt)
+        except:
+            return False
+
+    @staticmethod
+    def isfloat(txt):
+        if txt == '': return True
+        try:
+            float(txt)
+            return True
         except:
             return False
 
@@ -81,8 +100,8 @@ class CheckTypesTests(unittest.TestCase):
         self.test_float(CheckTypesRe())
 
     def testTry(self):
-        self.test_int(CheckTypesTry())
-        self.test_float(CheckTypesTry())
+        self.test_int(CheckTypesSwTry())
+        self.test_float(CheckTypesSwTry())
 
 
 if __name__ == '__main__':
