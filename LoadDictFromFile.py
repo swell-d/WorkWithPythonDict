@@ -75,7 +75,7 @@ def _csv_import(filename, maincolumn, language, optimize, recognize, delimiter):
         name = str(__correct(row[index], optimize) if index is not None else a + 2)
         if name: res[name] = {titles[i]: __correct(row[i], optimize) for i in range(0, len(titles))}
     print(f"{filename} / {len(data) - 1} lines / {len(res)} loaded / {len(data) - 1 - len(res)} lost / ", end='')
-    if recognize: _recognize_data(res, titles)
+    if recognize: _recognize_data(res)
     return res
 
 
@@ -90,7 +90,7 @@ def _xls_import(filename, maincolumn, language, optimize, recognize):
         name = str(row[index] if index is not None else a + 1)
         if name: res[name] = {titles[i]: row[i] for i in range(0, len(titles))}
     print(f"{filename} / {sheet.nrows - 1} lines / {len(res)} loaded / {sheet.nrows - 1 - len(res)} lost / ", end='')
-    if recognize: _recognize_data(res, titles)
+    if recognize: _recognize_data(res)
     return res
 
 
@@ -106,7 +106,7 @@ def _xlsx_import(filename, maincolumn, language, optimize, recognize):
         if name: res[name] = {titles[i]: row[i] for i in range(0, len(titles))}
     print(f"{filename} / {sheet.max_row - 1} lines / {len(res)} loaded / {sheet.max_row - 1 - len(res)} lost / ",
           end='')
-    if recognize: _recognize_data(res, titles)
+    if recognize: _recognize_data(res)
     return res
 
 
@@ -151,11 +151,14 @@ def find_value(data, key, value):
         if found_value == value: return each
 
 
-def _recognize_data(data, titles):
+def _recognize_data(data):
     from CheckTypes import CheckTypesTry
-    types = {key: int for key in titles}
+    types, titles = {}, set()
     for row in data.values():
         for key, value in row.items():
+            if key not in titles:
+                titles.add(key)
+                types[key] = int
             if types[key] == str:
                 continue
             elif types[key] == int and CheckTypesTry.isint(value):
@@ -166,7 +169,12 @@ def _recognize_data(data, titles):
                 types[key] = str
     for row in data.values():
         for key, value in row.items():
-            if types[key] != str and value != '': row[key] = types[key](value)
+            if types[key] == str:
+                continue
+            elif types[key] == int and value != '':
+                row[key] = int(value)
+            elif types[key] == float and value != '':
+                row[key] = float(value.replace(',', '.'))
 
 
 class LoadDictFromFileTests(unittest.TestCase):
@@ -176,8 +184,8 @@ class LoadDictFromFileTests(unittest.TestCase):
     __data_main = {'1': {'#': '1', 'first': '1\n1', 'second': '22,2', 'third': '', 'int': '123', 'float': '12.3'},
                    '2': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4', 'int': '',
                          'float': '12.3'}}
-    __data_recogn = {'2': {'#': 1, 'first': '1\n1', 'second': '22,2', 'third': '', 'int': 123, 'float': 12.3},
-                     '3': {'#': 2, 'first': '', 'second': '12345678901234567890', 'third': '"4""4', 'int': '',
+    __data_recogn = {'2': {'#': 1, 'first': '1\n1', 'second': 22.2, 'third': '', 'int': 123, 'float': 12.3},
+                     '3': {'#': 2, 'first': '', 'second': 1.2345678901234567e+19, 'third': '"4""4', 'int': '',
                            'float': 12.3}}
     __data_optim = {'2': {'#': '1', 'first': '1 1', 'second': '22,2', 'third': '', 'int': '123', 'float': '12.3'},
                     '3': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4', 'int': '',

@@ -68,7 +68,7 @@ class CheckTypesTry():
     def isfloat(txt):
         if txt == '': return True
         try:
-            float(txt)
+            float(txt.replace(',', '.'))
             return True
         except:
             return False
