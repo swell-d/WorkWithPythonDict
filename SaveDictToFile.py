@@ -127,7 +127,7 @@ def save_to_files(data, filename='', fieldnames=None, optimize=False, open=False
 def _param_list_extend():
     return [
         # main
-        'url'
+        'url',
         'sku',
         'manufacturer',  # may be ident
         'herstellernummer',
