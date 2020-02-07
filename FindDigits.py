@@ -101,7 +101,7 @@ class FindDigitsTests(unittest.TestCase):
 
         self.assertEqual([1, 234.567, 123], obj.find_floats('1ab23.3,45cd234,567ef123'))
 
-        self.assertEqual([234.567, 123], obj.find_floats('<b>234.567</b>123'))
+        self.assertEqual([234.567, 234.567], obj.find_floats('<b>234.567</b>234,567'))
 
         self.assertEqual([], obj.find_floats('1-2'))
 
