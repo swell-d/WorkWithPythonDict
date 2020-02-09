@@ -4,32 +4,31 @@ import unittest
 
 class FindDigits:
     POINT = '.,'
-    __int_compile = re.compile("-?\\d+")
     __ss = f'[^0-9{POINT}-]'
     __float_compile = re.compile(
         f"{__ss}(0){__ss}|{__ss}(-?0[{POINT}]\\d+){__ss}|{__ss}(-?[1-9]\\d*([{POINT}]\\d+)?){__ss}")
 
-    @classmethod
-    def find_int(cls, text):
-        findall = re.findall(cls.__int_compile, str(text))
+    @staticmethod
+    def find_int(text):
+        findall = re.findall(re.compile("-?\\d+"), str(text))
         result = []
         for each in findall: result.append(int(each))
-        return result
+        return result or ['']
 
     @classmethod
     def find_floats(cls, text):
         findall = re.findall(cls.__float_compile, f" {str(text)} ")
         result = []
         for each in findall: result.append(float((each[2] or each[1] or each[0]).replace(',', '.')))
-        return result
+        return result or ['']
 
 
 class FindDigitsTests(unittest.TestCase):
     def test_int(self):
         obj = FindDigits()
-        self.assertEqual([], obj.find_int(''))
-        self.assertEqual([], obj.find_int(' '))
-        self.assertEqual([], obj.find_int('abc'))
+        self.assertEqual([''], obj.find_int(''))
+        self.assertEqual([''], obj.find_int(' '))
+        self.assertEqual([''], obj.find_int('abc'))
         self.assertEqual([0], obj.find_int(0))
 
         self.assertEqual([0], obj.find_int('0'))
@@ -67,9 +66,9 @@ class FindDigitsTests(unittest.TestCase):
 
     def test_float(self):
         obj = FindDigits()
-        self.assertEqual([], obj.find_floats(''))
-        self.assertEqual([], obj.find_floats(' '))
-        self.assertEqual([], obj.find_floats('abc'))
+        self.assertEqual([''], obj.find_floats(''))
+        self.assertEqual([''], obj.find_floats(' '))
+        self.assertEqual([''], obj.find_floats('abc'))
         self.assertEqual([0], obj.find_floats(0))
 
         self.assertEqual([0], obj.find_floats('0'))
@@ -103,7 +102,7 @@ class FindDigitsTests(unittest.TestCase):
 
         self.assertEqual([234.567, 234.567], obj.find_floats('<b>234.567</b>234,567'))
 
-        self.assertEqual([], obj.find_floats('1-2'))
+        self.assertEqual([''], obj.find_floats('1-2'))
 
 
 if __name__ == '__main__':

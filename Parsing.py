@@ -221,7 +221,8 @@ def get_file_from_web(url, name, path='images'):
     if 'treston' in path and not file_type: file_type = '.pdf'
     if len(file_type) > 4 or not file_type:
         print(f'=== bad file_type "{file_type}" in url  {url}')
-        raise ValueError
+        return ''
+        # raise ValueError
     new_path = f'{path}\\{name}{file_type}'
     if os.path.exists(cache_path) and os.path.exists(new_path):
         if os.stat(cache_path).st_size == os.stat(new_path).st_size:
