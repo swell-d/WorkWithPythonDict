@@ -4,7 +4,7 @@ import json
 import requests
 import win32api
 
-print('\n===', datetime.strftime(datetime.now(), "%Y-%m-%d_%H-%M"), 'WinTime')
+print('\n===', datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d_%H-%M-%S"), 'WinTime')
 
 try:
     result = json.loads(requests.get('http://worldtimeapi.org/api/timezone/Etc/GMT').content)
