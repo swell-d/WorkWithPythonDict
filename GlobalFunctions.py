@@ -17,8 +17,8 @@ def print_run_time(func):
     return wrapper
 
 
-def print(text, only_debug=False, end='\n'):
-    SwPrint.SwPrint.print(text, only_debug, end)
+def print(*args, only_debug=False, end='\n'):
+    SwPrint.SwPrint.print(*args, only_debug=only_debug, end=end)
 
 
 def generate_time_string(duration):

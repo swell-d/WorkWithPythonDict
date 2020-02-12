@@ -1,4 +1,6 @@
 import codecs
+import functools
+import inspect
 import os
 import pathlib
 import shutil
@@ -86,7 +88,7 @@ def create_product_and_category(sku, category_path):
 
 def get_good_html(text):
     if text == '': return ''
-    return Sw.clr(bs4.BeautifulSoup(text, 'lxml').body)[6:-7]
+    return Sw.clr(bs4.BeautifulSoup(str(text), 'lxml').body)[6:-7]
 
 
 def same_for_all(data, lang):
@@ -203,6 +205,11 @@ def get_htmls_from_webdriver(url, file_name, additional_func=None):
             return ''
     time.sleep(1)
     html_text = _parsing_web_driver.page_source
+
+    # if '404 - File or directory not found.' in html_text:
+    #     print(f'=== code 404  {url}')
+    #     return ''
+
     if additional_func is not None:
         additional_func(_parsing_web_driver)
         html_text = _parsing_web_driver.page_source
@@ -310,9 +317,13 @@ def delete_file(url):
 
 def start_stop_decorator(debug=False):
     def wrapper1(func):
+        @functools.wraps(func)
         def wrapper2(*args, **kwargs):
             start_time = time.time()
-            SwPrint.SwPrint(debug=debug)
+            start_file_name = inspect.getfile(func)
+            if '/' in start_file_name: start_file_name = start_file_name[start_file_name.rfind('/') + 1:]
+            if '\\' in start_file_name: start_file_name = start_file_name[start_file_name.rfind('\\') + 1:]
+            SwPrint.SwPrint(debug=debug, prj_name=start_file_name)
             print('start')
             result = func(*args, **kwargs)
             global _parsing_web_driver
