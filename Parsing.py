@@ -58,7 +58,7 @@ def create_simple_product(sku, addon, brand, lieferant, name, lang, imgs,
     data['short_description'] = name
     data['description'] = name
     download_imgs(data, imgs=imgs, path='images')
-    # data['category_ids'] = category_ids
+    data['category_ids'] = category_ids
     for each_category in category_ids.split('||'):
         create_product_and_category(data['sku'], each_category)
     data['price'] = Sw.get_float(price, ndigits=2) if price else 0
@@ -268,18 +268,25 @@ def download_imgs(data, imgs, path='images'):
     sku = Sw.transliterate(data['herstellernummer'])
     for link in imgs:
         if not data.get('image'):
-            data['image'] = get_file_from_web(link, f'{brand}_{sku}', path)
-            data['image'] = data['image'].replace('png', 'jpg').replace('gif', 'jpg').replace('jpeg', 'jpg')
+            data['image'] = __change_file_type(get_file_from_web(link, f'{brand}_{sku}', path), 'jpg')
             if not data['image']: continue
             data['small_image'] = data['image']
             data['thumbnail'] = data['image']
             data['media_gallery'] = data['image']
         else:
-            next_img = get_file_from_web(link, f'{brand}_{sku}_{i + 1}', path)
-            if not next_img: continue
+            file_name = get_file_from_web(link, f'{brand}_{sku}_{i + 1}', path)
+            if not file_name: continue
             i += 1
-            data['media_gallery'] += f'|{next_img}'
+            data['media_gallery'] += f"|{__change_file_type(file_name, 'jpg')}"
     if not data.get('image'): get_logo_with_sku(data, f'{path}_logos')
+
+
+def __change_file_type(file_name, file_type):
+    if '.' in file_name:
+        file_name = file_name.replace(file_name[file_name.rfind('.'):], f'.{file_type}')
+    else:
+        print(f'=== download_imgs error - no file type {file_name}')
+    return file_name
 
 
 def get_logo_with_sku(data, path='images'):

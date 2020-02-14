@@ -11,7 +11,7 @@ class SwPrint:
     __start_time = ''
 
     @classmethod
-    def __init__(cls, debug=False, prj_name='', path='C:\\Users\\Administrator\\Documents\\_python\\_logs\\'):
+    def __init__(cls, debug=False, prj_name='', path='C:\\_cache\\__logs\\'):
         cls.__debug = debug
         cls.__prj_name = prj_name
         cls.__path = path
