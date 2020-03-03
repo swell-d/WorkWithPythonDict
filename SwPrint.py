@@ -8,14 +8,14 @@ class SwPrint:
     __debug = False
     __prj_name = ''
     __path = ''
-    __start_time = ''
+    _start_time = ''
 
     @classmethod
     def __init__(cls, debug=False, prj_name='', path='C:\\_cache\\__logs\\'):
         cls.__debug = debug
         cls.__prj_name = prj_name
         cls.__path = path
-        cls.__start_time = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d_%H-%M")
+        cls._start_time = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d_%H-%M")
 
     @classmethod
     def print(cls, *args, only_debug=False, end='\n', without_datetime=False):
@@ -28,7 +28,7 @@ class SwPrint:
 
     @classmethod
     def save_log_to_file(cls):
-        full_path = f'{cls.__path}\\{cls.__start_time}_{cls.__prj_name}'.rstrip('_') + '.txt'
+        full_path = f'{cls.__path}\\{cls._start_time}_{cls.__prj_name}'.rstrip('_') + '.txt'
         pathlib.Path(cls.__path).mkdir(parents=True, exist_ok=True)
         with codecs.open(full_path, 'w', 'utf-8') as f:
             f.write(cls.__log)

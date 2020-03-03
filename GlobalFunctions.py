@@ -18,6 +18,8 @@ def print_run_time(func):
 
 
 def print(*args, only_debug=False, end='\n'):
+    if SwPrint.SwPrint._start_time == '':
+        SwPrint.SwPrint(debug=False, prj_name='')
     SwPrint.SwPrint.print(*args, only_debug=only_debug, end=end)
 
 

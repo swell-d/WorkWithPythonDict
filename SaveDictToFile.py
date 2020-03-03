@@ -12,7 +12,7 @@ import GlobalFunctions
 from GlobalFunctions import print  # Todo use logging
 
 
-def __init(data, filename, fieldnames):
+def __init(data, filename, fieldnames, optimize):
     if fieldnames is None: fieldnames = []
     if not isinstance(data, (dict, list)): raise ValueError('Wrong data')
     if not isinstance(filename, str): raise ValueError('Wrong filename')
@@ -20,21 +20,29 @@ def __init(data, filename, fieldnames):
     for key in fieldnames:
         if not isinstance(key, str): raise ValueError('Wrong fieldnames')
     data = copy.deepcopy(data)
-    fieldnames = __generate_fieldnames(data, fieldnames)
+    fieldnames = __generate_fieldnames_optimized(data, fieldnames) if optimize else __generate_fieldnames_all(data)
     return data, fieldnames
 
 
-def __generate_fieldnames(data, fieldnames):
+def __generate_fieldnames_optimized(data, fieldnames):
     new_fieldnames = []
     for each in data.values() if isinstance(data, dict) else data:
         if not isinstance(each, dict): raise ValueError('Wrong data')
         for key, value in each.items():
             if value != '' and key not in new_fieldnames: new_fieldnames.append(str(key))
-    if '#' in new_fieldnames: new_fieldnames.remove('#')
     additional_fields = [x for x in new_fieldnames if x not in fieldnames]
     cleared_fields = [x for x in fieldnames if x not in new_fieldnames]
     if cleared_fields: print('deleted columns: ' + ', '.join(cleared_fields))
     return [x for x in fieldnames if x in new_fieldnames] + additional_fields
+
+
+def __generate_fieldnames_all(data):
+    all_fieldnames = []
+    for each in data.values() if isinstance(data, dict) else data:
+        if not isinstance(each, dict): raise ValueError('Wrong data')
+        for key, value in each.items():
+            if key not in all_fieldnames: all_fieldnames.append(str(key))
+    return all_fieldnames
 
 
 def __view_enhancement(ws):
@@ -54,14 +62,14 @@ def __view_enhancement(ws):
 @GlobalFunctions.print_run_time
 def save_to_xlsx(data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
     if not __check_data(data, filename): return None
-    data, fieldnames = __init(data, filename, fieldnames)
+    data, fieldnames = __init(data, filename, fieldnames, optimize)
     newfilename = _get_new_file_name_with_datetime('.xlsx', filename, date_insert)
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.append(['#'] + fieldnames)
+    ws.append(fieldnames)
     i = -1
     for i, each in enumerate(data.values() if isinstance(data, dict) else data):
-        line = [i + 1]
+        line = []
         for key in fieldnames:
             value = each.get(key, '')
             if not isinstance(value, (int, float)) or len(str(value)) > 10:
@@ -100,17 +108,16 @@ def _get_new_file_name_with_datetime(filetype, filename, date_insert):
 def save_to_csv(data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
     if not __check_data(data, filename): return None
     SEP, QC, NL = ',', '"', '\r\n'  # separator, quote char, new line
-    data, fieldnames = __init(data, filename, fieldnames)
+    data, fieldnames = __init(data, filename, fieldnames, optimize)
     newfilename = _get_new_file_name_with_datetime('.csv', filename, date_insert)
     with codecs.open(newfilename, 'w', encoding='utf-8') as file:
-        fieldnames.insert(0, '#')
         file.write(SEP.join([f'{QC}{x}{QC}' for x in fieldnames]) + NL)
         i = -1
         for i, each in enumerate(data.values() if isinstance(data, dict) else data):
-            line = [i + 1]
-            for key in fieldnames[1:]:
+            line = []
+            for key in fieldnames:
                 value = each.get(key, '')
-                if isinstance(value, float): value = str(value).replace('.', ',')
+                if isinstance(value, float): value = str(value)
                 value = str(value) if not optimize else re.sub(r'\s+', ' ', str(value)).strip()
                 line.append(value.replace('"', '""'))
             file.write(SEP.join([f'{QC}{x}{QC}' for x in line]) + NL)
@@ -171,12 +178,12 @@ def _param_list_extend():
 
 
 class SaveDictToFileTests(unittest.TestCase):
-    __data = {'2': {'#': '1', 'first': '1\r\n1', 'second': '22.2', 'third': ''},
-              '3': {'#': '2', 'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
+    __data = {'2': {'first': '1\r\n1', 'second': '22.2', 'third': ''},
+              '3': {'first': '', 'second': '12345678901234567890', 'third': '"4""4'}}
 
     def test_save_to_xlsx(self):
-        result = [['#', 'first', 'second', 'third'], ['1', '1\r\n1', '22.2', 'None'],
-                  ['2', 'None', '12345678901234567890', '"4""4']]
+        result = [['first', 'second', 'third'], ['1\r\n1', '22.2', 'None'],
+                  ['None', '12345678901234567890', '"4""4']]
         xlsx = []
         file_name = save_to_xlsx(self.__data)
         sheet = openpyxl.load_workbook(file_name).active
@@ -191,7 +198,7 @@ class SaveDictToFileTests(unittest.TestCase):
         os.remove(file_name)
 
     def test_save_to_csv(self):
-        result = '"#","first","second","third"\r\n"1","1\r\n1","22.2",""\r\n"2","","12345678901234567890","""4""""4"\r\n'
+        result = '"first","second","third"\r\n"1\r\n1","22.2",""\r\n"","12345678901234567890","""4""""4"\r\n'
         file_name = save_to_csv(self.__data)
         with codecs.open(file_name, 'r', encoding='utf-8') as file:
             csv = file.read()
