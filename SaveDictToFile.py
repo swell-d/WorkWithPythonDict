@@ -105,11 +105,13 @@ def _get_new_file_name_with_datetime(filetype, filename, date_insert):
 
 
 @GlobalFunctions.print_run_time
-def save_to_csv(data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True):
+def save_to_csv(data, filename='', fieldnames=None, optimize=False, open=False, date_insert=True, SEP=','):
     if not __check_data(data, filename): return None
-    SEP, QC, NL = ',', '"', '\r\n'  # separator, quote char, new line
+    QC, NL = '"', '\r\n'  # separator, quote char, new line
     data, fieldnames = __init(data, filename, fieldnames, optimize)
-    newfilename = _get_new_file_name_with_datetime('.csv', filename, date_insert)
+    if SEP == ',': file_extension = '.csv'
+    if SEP == '\t': file_extension = '.tsv'
+    newfilename = _get_new_file_name_with_datetime(file_extension, filename, date_insert)
     with codecs.open(newfilename, 'w', encoding='utf-8') as file:
         file.write(SEP.join([f'{QC}{x}{QC}' for x in fieldnames]) + NL)
         i = -1

@@ -299,13 +299,13 @@ def get_logo_with_sku(data, path='images'):
     data['logo'] = 'x'
 
 
-def generate_img(sku, name, path='images'):
+def generate_img(sku, name, path='images', brand='logo'):
     file_name = f'{Sw.good_name(name)}.jpg'
     full_path = f'{path}\\{file_name}'
     if os.path.exists(full_path): return file_name
     print(f'generate img  {full_path}')
     fnt = PIL.ImageFont.truetype('C:\Windows\Fonts\Arial.ttf', 60)
-    img = PIL.Image.open('logo.png').convert('RGB')
+    img = PIL.Image.open(f'{brand.lower().replace(" ", "_")}.png').convert('RGB')
     d = PIL.ImageDraw.Draw(img)
     d.text((60, 880), sku, fill=0, font=fnt)
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
