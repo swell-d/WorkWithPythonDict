@@ -38,28 +38,28 @@ def __find_index(maincolumn, titles):
 
 def __xls_titles(sheet, optimize):
     titles_original = []
-    last_not_empty_column = 0
+    # last_not_empty_column = 0
     for column in range(0, sheet.ncols):
         data = str(__correct(sheet.cell(0, column).value, optimize))
         if data == '':
             data = openpyxl.utils.get_column_letter(column + 1)
-        else:
-            last_not_empty_column = column + 1
+        # else:
+        #     last_not_empty_column = column + 1
         titles_original.append(data)
-    return titles_original[:last_not_empty_column]
+    return titles_original  # [:last_not_empty_column]
 
 
 def __xlsx_titles(sheet, optimize):
     titles_original = []
-    last_not_empty_column = 0
+    # last_not_empty_column = 0
     for column in range(1, sheet.max_column + 1):
         data = str(__correct(sheet.cell(row=1, column=column).value, optimize))
         if data == '':
             data = openpyxl.utils.get_column_letter(column)
-        else:
-            last_not_empty_column = column
+        # else:
+        #     last_not_empty_column = column
         titles_original.append(data)
-    return titles_original[:last_not_empty_column]
+    return titles_original  # [:last_not_empty_column]
 
 
 @GlobalFunctions.print_run_time
@@ -82,16 +82,21 @@ def _csv_import(filename, maincolumn, language, optimize, recognize, delimiter):
 @GlobalFunctions.print_run_time
 def _xls_import(filename, maincolumn, language, optimize, recognize):
     res = {}
-    sheet = xlrd.open_workbook(filename).sheet_by_index(0)
+    sheet = xlrd.open_workbook(filename).sheet_by_index(0)  # Todo
     titles = __titles(__xls_titles(sheet, optimize), language, optimize)
     index = __find_index(maincolumn, titles)
     for a in range(1, sheet.nrows):
-        row = [__correct(sheet.cell(a, col).value, optimize) for col in range(0, len(titles))]
+        row = [__correct(__xlrd_get_value(sheet.cell(a, col)), optimize) for col in range(0, len(titles))]
         name = str(row[index] if index is not None else a + 1)
         if name: res[name] = {titles[i]: row[i] for i in range(0, len(titles))}
     print(f"{filename} / {sheet.nrows - 1} lines / {len(res)} loaded / {sheet.nrows - 1 - len(res)} lost / ", end='')
     if recognize: _recognize_data(res)
     return res
+
+
+def __xlrd_get_value(cell):
+    if cell.ctype == xlrd.XL_CELL_ERROR: return ''
+    return cell.value
 
 
 @GlobalFunctions.print_run_time
