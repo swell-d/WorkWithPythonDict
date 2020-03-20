@@ -29,7 +29,7 @@ def get_float_or_null(text, ndigits=2):
 
 
 def good_name(name):
-    name = name.replace('/', '-').replace('\\', '-').replace(' ', '-').replace('*', '-')
+    name = name.replace('/', '-').replace('\\', '-').replace(' ', '_').replace('*', '-')
     name = name.replace('ä', 'ae').replace('ö', 'oe').replace('ü', 'ue').replace('ß', 'ss')
     name = name.replace('°', '').replace('+', '-').replace('?', '-').replace('&', '-').replace('%20', '_')
     # name = transliterate(name)
