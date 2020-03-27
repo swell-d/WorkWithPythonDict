@@ -37,7 +37,9 @@ def get_rate(cur_from, cur_to, date=datetime.strftime(datetime.now(), "%d/%m/%Y"
         n2 = float(cur_to_data.group(1))
         v2 = float(cur_to_data.group(2).replace(",", "."))
 
-    return round(v1 / n1 / v2 * n2, 4)
+    result = round(v1 / n1 / v2 * n2, 4)
+    if not result: raise ConnectionError
+    return result
 
 
 if __name__ == '__main__':

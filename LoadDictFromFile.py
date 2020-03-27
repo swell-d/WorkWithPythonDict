@@ -38,28 +38,22 @@ def __find_index(maincolumn, titles):
 
 def __xls_titles(sheet, optimize):
     titles_original = []
-    # last_not_empty_column = 0
     for column in range(0, sheet.ncols):
         data = str(__correct(sheet.cell(0, column).value, optimize))
         if data == '':
             data = openpyxl.utils.get_column_letter(column + 1)
-        # else:
-        #     last_not_empty_column = column + 1
         titles_original.append(data)
-    return titles_original  # [:last_not_empty_column]
+    return titles_original
 
 
 def __xlsx_titles(sheet, optimize):
     titles_original = []
-    # last_not_empty_column = 0
     for column in range(1, sheet.max_column + 1):
         data = str(__correct(sheet.cell(row=1, column=column).value, optimize))
         if data == '':
             data = openpyxl.utils.get_column_letter(column)
-        # else:
-        #     last_not_empty_column = column
         titles_original.append(data)
-    return titles_original  # [:last_not_empty_column]
+    return titles_original
 
 
 @GlobalFunctions.print_run_time
@@ -121,7 +115,11 @@ def load(filename, maincolumn=None, language=None, optimize=False, recognize=Fal
     elif filename.endswith('.xls'):
         return _xls_import(filename, maincolumn, language, optimize, recognize)
     elif filename.endswith('.xlsx') or filename.endswith('.xlsm'):
-        return _xlsx_import(filename, maincolumn, language, optimize, recognize)
+        try:
+            return _xlsx_import(filename, maincolumn, language, optimize, recognize)
+        except KeyError:
+            print('Error: bad file format. Will try to use xls instead')
+            return _xls_import(filename, maincolumn, language, optimize, recognize)
     else:
         raise ValueError(f'Wrong filetype: {filename}')
 
@@ -199,12 +197,12 @@ class LoadDictFromFileTests(unittest.TestCase):
     def test_csv_import(self):
         test_dict = load('files_for_tests/test_import.csv')
         self.assertEqual(self.__data, test_dict)
-        # test_dict = load('files_for_tests/test_import.csv', maincolumn='#')
-        # self.assertEqual(self.__data_main, test_dict)
-        # test_dict = load('files_for_tests/test_import.csv', recognize=True)
-        # self.assertEqual(self.__data_recogn, test_dict)
-        # test_dict = load('files_for_tests/test_import.csv', optimize=True)
-        # self.assertEqual(self.__data_optim, test_dict)
+        test_dict = load('files_for_tests/test_import.csv', maincolumn='#')
+        self.assertEqual(self.__data_main, test_dict)
+        test_dict = load('files_for_tests/test_import.csv', recognize=True)
+        self.assertEqual(self.__data_recogn, test_dict)
+        test_dict = load('files_for_tests/test_import.csv', optimize=True)
+        self.assertEqual(self.__data_optim, test_dict)
 
     def test_xls_import(self):
         test_dict = load('files_for_tests/test_import.xls')

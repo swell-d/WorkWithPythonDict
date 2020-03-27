@@ -7,6 +7,7 @@ import re
 import unittest
 
 import openpyxl
+from openpyxl.styles import Alignment
 
 import GlobalFunctions
 from GlobalFunctions import print  # Todo use logging
@@ -50,6 +51,7 @@ def __view_enhancement(ws):
         dims = {}
         for row in ws.iter_rows():
             for cell in row:
+                cell.alignment = Alignment(shrinkToFit=True)
                 dims[cell.column_letter] = max((dims.get(cell.column_letter, 1), len(str(cell.value))))
         for col, value in dims.items():
             ws.column_dimensions[col].width = min(value + 2, 40)
