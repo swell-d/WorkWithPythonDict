@@ -36,35 +36,39 @@ def __find_index(maincolumn, titles):
     return None
 
 
-def __xls_titles(sheet, optimize):
+def __xls_titles(sheet, optimize, title_row):
     titles_original = []
     for column in range(0, sheet.ncols):
-        data = str(__correct(sheet.cell(0, column).value, optimize))
-        if data == '':
+        if title_row is not None:
+            data = str(__correct(sheet.cell(title_row - 1, column).value, optimize))
+        else:
             data = openpyxl.utils.get_column_letter(column + 1)
+        if data == '': data = openpyxl.utils.get_column_letter(column + 1)
         titles_original.append(data)
     return titles_original
 
 
-def __xlsx_titles(sheet, optimize):
+def __xlsx_titles(sheet, optimize, title_row):
     titles_original = []
     for column in range(1, sheet.max_column + 1):
-        data = str(__correct(sheet.cell(row=1, column=column).value, optimize))
-        if data == '':
+        if title_row is not None:
+            data = str(__correct(sheet.cell(row=title_row, column=column).value, optimize))
+        else:
             data = openpyxl.utils.get_column_letter(column)
+        if data == '': data = openpyxl.utils.get_column_letter(column)
         titles_original.append(data)
     return titles_original
 
 
 @GlobalFunctions.print_run_time
-def _csv_import(filename, maincolumn, language, optimize, recognize, delimiter):
+def _csv_import(filename, maincolumn, language, optimize, recognize, delimiter, title_row, first_row):
     res = {}
     with codecs.open(filename, 'r', encoding='utf-8') as file:
         reader = csv.reader(file, delimiter=delimiter, quotechar='"')
         data = [row for row in reader]
-    titles = __titles(data[0], language, optimize)
+    titles = __titles(data[title_row - 1], language, optimize)
     index = __find_index(maincolumn, titles)
-    for a, row in enumerate(data[1:]):
+    for a, row in enumerate(data[first_row - 1:]):
         if not len(row): continue
         name = str(__correct(row[index], optimize) if index is not None else a + 2)
         if name: res[name] = {titles[i]: __correct(row[i], optimize) for i in range(0, len(titles))}
@@ -74,12 +78,12 @@ def _csv_import(filename, maincolumn, language, optimize, recognize, delimiter):
 
 
 @GlobalFunctions.print_run_time
-def _xls_import(filename, maincolumn, language, optimize, recognize):
+def _xls_import(filename, maincolumn, language, optimize, recognize, title_row, first_row):
     res = {}
     sheet = xlrd.open_workbook(filename).sheet_by_index(0)  # Todo
-    titles = __titles(__xls_titles(sheet, optimize), language, optimize)
+    titles = __titles(__xls_titles(sheet, optimize, title_row), language, optimize)
     index = __find_index(maincolumn, titles)
-    for a in range(1, sheet.nrows):
+    for a in range(first_row - 1, sheet.nrows):
         row = [__correct(__xlrd_get_value(sheet.cell(a, col)), optimize) for col in range(0, len(titles))]
         name = str(row[index] if index is not None else a + 1)
         if name: res[name] = {titles[i]: row[i] for i in range(0, len(titles))}
@@ -94,12 +98,12 @@ def __xlrd_get_value(cell):
 
 
 @GlobalFunctions.print_run_time
-def _xlsx_import(filename, maincolumn, language, optimize, recognize):
+def _xlsx_import(filename, maincolumn, language, optimize, recognize, title_row, first_row):
     res = {}
     sheet = openpyxl.load_workbook(filename).active
-    titles = __titles(__xlsx_titles(sheet, optimize), language, optimize)
+    titles = __titles(__xlsx_titles(sheet, optimize, title_row), language, optimize)
     index = __find_index(maincolumn, titles)
-    for a in range(2, sheet.max_row + 1):
+    for a in range(first_row, sheet.max_row + 1):
         row = [__correct(sheet.cell(row=a, column=col).value, optimize) for col in range(1, len(titles) + 1)]
         name = str(row[index] if index is not None else a)
         if name: res[name] = {titles[i]: row[i] for i in range(0, len(titles))}
@@ -109,17 +113,18 @@ def _xlsx_import(filename, maincolumn, language, optimize, recognize):
     return res
 
 
-def load(filename, maincolumn=None, language=None, optimize=False, recognize=False, delimiter=','):
+def load(filename, maincolumn=None, language=None, optimize=False, recognize=False, delimiter=',', title_row=1,
+         first_row=2):
     if filename.endswith('.csv'):
-        return _csv_import(filename, maincolumn, language, optimize, recognize, delimiter)
+        return _csv_import(filename, maincolumn, language, optimize, recognize, delimiter, title_row, first_row)
     elif filename.endswith('.xls'):
-        return _xls_import(filename, maincolumn, language, optimize, recognize)
+        return _xls_import(filename, maincolumn, language, optimize, recognize, title_row, first_row)
     elif filename.endswith('.xlsx') or filename.endswith('.xlsm'):
         try:
-            return _xlsx_import(filename, maincolumn, language, optimize, recognize)
+            return _xlsx_import(filename, maincolumn, language, optimize, recognize, title_row, first_row)
         except KeyError:
             print('Error: bad file format. Will try to use xls instead')
-            return _xls_import(filename, maincolumn, language, optimize, recognize)
+            return _xls_import(filename, maincolumn, language, optimize, recognize, title_row, first_row)
     else:
         raise ValueError(f'Wrong filetype: {filename}')
 

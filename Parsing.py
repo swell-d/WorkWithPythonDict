@@ -300,7 +300,7 @@ def get_logo_with_sku(data, path='images'):
 
 
 def generate_img(sku, name, path='images', brand='logo'):
-    file_name = f'{Sw.good_name(name)}.jpg'
+    file_name = f'{Sw.good_name(Sw.transliterate(name))}.jpg'
     full_path = f'{path}\\{file_name}'
     if os.path.exists(full_path): return file_name
     print(f'generate img  {full_path}')
