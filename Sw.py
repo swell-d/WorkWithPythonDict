@@ -36,8 +36,7 @@ def good_name(name):
     return urllib.parse.quote(name).lower()
 
 
-def get_cache_path(url, short=False, html=False,
-                   cache_path='C:\\_cache\\'):
+def get_cache_path(url, short=False, html=False, cache_path='C:\\_cache\\'):
     if cache_path[-1] != '\\': cache_path += '\\'
     file_name = url[url.find("//") + 2:].replace('..', '').replace('/', '\\')
     if short and '?' in file_name: file_name = file_name[:file_name.rfind("?")]

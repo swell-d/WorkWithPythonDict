@@ -138,12 +138,12 @@ class Category:
 
     @classmethod
     def reorganize_categories(cls, lang, col=1):
-        new_cat_name = {'de': 'Mehr', 'en': 'More', 'ru': 'Разное'}
+        new_cat_name = {'de': 'Mehr', 'en': 'More', 'ru': 'Прочее'}
         print(f'всего {int(cls.count() / col)} категорий')
         while True:
             a, b = 0, 0
             for each in list(cls.categories.values()).copy():
-                if str(each).count('|') < 3: continue
+                # if str(each).count('|') < 3: continue
                 ### удаляем папки с количеством товаров меньше 3
                 if each.children_categories_count == 0 and each.children_products_count < 3:
                     each.delete()

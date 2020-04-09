@@ -1,4 +1,5 @@
 import json
+import time
 import unittest
 
 import requests
@@ -53,7 +54,15 @@ class Deepl:
                 'target_lang': target_lang,
                 'tag_handling': 'xml'}
         if source_lang: data['source_lang'] = source_lang
-        page = requests.post('https://api.deepl.com/v2/translate', data)
+        try:
+            page = requests.post('https://api.deepl.com/v2/translate', data)
+        except ConnectionError:
+            try:
+                time.sleep(1)
+                page = requests.post('https://api.deepl.com/v2/translate', data)
+            except ConnectionError:
+                cls.__save_db()
+                raise ConnectionError
         if page.status_code != 200:
             print(f'translate_text: page status code {page.status_code}')
             print(page.content)
