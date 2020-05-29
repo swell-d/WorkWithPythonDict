@@ -1,5 +1,7 @@
 import time
 import urllib.parse
+from datetime import datetime
+from urllib.parse import quote, urljoin
 
 import bs4
 
@@ -34,3 +36,6 @@ def tmp():  # need for "Optimize imports"
     Sw()
     WorkWithJSON()
     print()
+    datetime()
+    quote()
+    urljoin()

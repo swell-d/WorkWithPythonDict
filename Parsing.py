@@ -18,6 +18,7 @@ import selenium.webdriver
 import urllib3
 
 import Category
+import CompareImages
 import GlobalFunctions
 import Product
 import Sw
@@ -102,7 +103,8 @@ def create_simple_product_m2(url, sku, msku, addon, brand, supplier, name, lang,
     if not check_sku(sku, url=url, good_symbols=good_symbols): return None
     addon = Sw.clr(addon).upper()
     brand = Sw.clr(brand, start_with_big=True)
-    name = Sw.clr(name, start_with_big=True).strip(' .,')
+    name = Sw.clr(name, start_with_big=True).strip(' .,-;')
+    if name == name.upper(): name = name.title()
     url_key = f"{brand}_{sku}".strip('_').lower()
     url_key = url_key.replace('/', '-').replace('\\', '-').replace(' ', '-').replace('+', '-').replace('.', '-')
 
@@ -196,6 +198,7 @@ def create_simple_product_m2(url, sku, msku, addon, brand, supplier, name, lang,
     new_data['price_discount'] = 0
     new_data['special_price_discount'] = 0
     new_data['supplier'] = supplier
+    new_data['dist_store'] = 'Поставка под заказ'
     new_data['category_ids'] = '2'
 
     return new_data
@@ -222,9 +225,8 @@ def minimalka(data):
 def reorganize_categories(products, lang, col=1):
     Category.Category.reorganize_categories(lang, col)
     for product in products.values():
-        product['categories'] = Product.Product.export_categories(product['sku']).replace(',', '.').replace('||',
-                                                                                                            ',').replace(
-            '/', '-').replace('|', '/')
+        product['categories'] = Product.Product.export_categories(
+            product['sku']).replace(',', '.').replace('||', ',').replace('/', '-').replace('|', '/')
     Category.Category.clear()
     Product.Product.clear()
 
@@ -256,7 +258,7 @@ def _create_web_driver(url):
     chrome_options = selenium.webdriver.ChromeOptions()
     chrome_options.add_argument("--start-maximized")
     prefs = {"profile.managed_default_content_settings.images": 2}
-    prefs = {}
+    # prefs = {}
     chrome_options.add_experimental_option("prefs", prefs)
     _parsing_web_driver = selenium.webdriver.Chrome(
         'C:\\Users\\Administrator\\Documents\\_python\\webdriver\\chromedriver.exe',
@@ -300,6 +302,11 @@ def get_simple_html(url, file_name):
     page.encoding = 'utf-8'
     save_text_to_file(file_name, page.text)
     return page.text
+
+
+def get_driver():
+    global _parsing_web_driver
+    return _parsing_web_driver
 
 
 def get_htmls_from_webdriver(url, file_name, additional_func=None):
@@ -398,6 +405,11 @@ def download_imgs_m2(new_data, imgs, path='images'):
         if not new_data.get('base_image'):
             new_data['base_image'] = __change_file_type(download_file_from_web(link, f'{brand_sku}', path), 'jpg')
             if not new_data['base_image']: continue
+
+            if check_image_for_bad(new_data['base_image']):  # Todo
+                new_data['base_image'] = ''
+                continue
+
             new_data['base_image_label'] = new_data['name']
             new_data['small_image'] = new_data['base_image']
             new_data['small_image_label'] = new_data['name']
@@ -410,9 +422,21 @@ def download_imgs_m2(new_data, imgs, path='images'):
         else:
             file_name = download_file_from_web(link, f'{brand_sku}_{i + 1}', path)
             if not file_name: continue
+            if check_image_for_bad(file_name): continue  # Todo
             i += 1
-            new_data['additional_images'] += f"|{__change_file_type(file_name, 'jpg')}"
+            new_data['additional_images'] += f",{__change_file_type(file_name, 'jpg')}"
     if not new_data.get('base_image'): get_logo_with_sku_m2(new_data, f'{path}_logos')
+
+
+def check_image_for_bad(file_name):
+    try:
+        if CompareImages.get_hash(f"images\\{file_name}", 'bad.jpg') != 0: return False
+    except:
+        return True
+    pathlib.Path('images_bad').mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(f"images\\{file_name}", f"images_bad\\{file_name}")
+    os.remove(f"images\\{file_name}")
+    return True
 
 
 def __change_file_type(file_name, file_type):

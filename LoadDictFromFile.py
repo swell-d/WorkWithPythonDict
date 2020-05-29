@@ -60,13 +60,20 @@ def __xlsx_titles(sheet, optimize, title_row):
     return titles_original
 
 
+def alphabet(length):
+    result = []
+    for i in range(length):
+        result.append(openpyxl.utils.get_column_letter(i + 1))
+    return result
+
+
 @GlobalFunctions.print_run_time
 def _csv_import(filename, maincolumn, language, optimize, recognize, delimiter, title_row, first_row):
     res = {}
     with codecs.open(filename, 'r', encoding='utf-8') as file:
         reader = csv.reader(file, delimiter=delimiter, quotechar='"')
         data = [row for row in reader]
-    titles = __titles(data[title_row - 1], language, optimize)
+    titles = __titles(data[title_row - 1], language, optimize) if title_row else alphabet(len(data[0]))
     index = __find_index(maincolumn, titles)
     for a, row in enumerate(data[first_row - 1:]):
         if not len(row): continue
@@ -83,11 +90,13 @@ def _xls_import(filename, maincolumn, language, optimize, recognize, title_row, 
     sheet = xlrd.open_workbook(filename).sheet_by_index(0)  # Todo
     titles = __titles(__xls_titles(sheet, optimize, title_row), language, optimize)
     index = __find_index(maincolumn, titles)
+    first_row = max(first_row, title_row + 1) if title_row else first_row
     for a in range(first_row - 1, sheet.nrows):
         row = [__correct(__xlrd_get_value(sheet.cell(a, col)), optimize) for col in range(0, len(titles))]
         name = str(row[index] if index is not None else a + 1)
         if name: res[name] = {titles[i]: row[i] for i in range(0, len(titles))}
-    print(f"{filename} / {sheet.nrows - 1} lines / {len(res)} loaded / {sheet.nrows - 1 - len(res)} lost / ", end='')
+    rows_count = sheet.nrows - title_row if title_row else sheet.nrows
+    print(f"{filename} / {rows_count} lines / {len(res)} loaded / {rows_count - len(res)} lost / ", end='')
     if recognize: _recognize_data(res)
     return res
 
@@ -103,12 +112,13 @@ def _xlsx_import(filename, maincolumn, language, optimize, recognize, title_row,
     sheet = openpyxl.load_workbook(filename).active
     titles = __titles(__xlsx_titles(sheet, optimize, title_row), language, optimize)
     index = __find_index(maincolumn, titles)
+    first_row = max(first_row, title_row + 1) if title_row else first_row
     for a in range(first_row, sheet.max_row + 1):
         row = [__correct(sheet.cell(row=a, column=col).value, optimize) for col in range(1, len(titles) + 1)]
         name = str(row[index] if index is not None else a)
         if name: res[name] = {titles[i]: row[i] for i in range(0, len(titles))}
-    print(f"{filename} / {sheet.max_row - 1} lines / {len(res)} loaded / {sheet.max_row - 1 - len(res)} lost / ",
-          end='')
+    rows_count = sheet.max_row - title_row if title_row else sheet.max_row
+    print(f"{filename} / {rows_count} lines / {len(res)} loaded / {rows_count - len(res)} lost / ", end='')
     if recognize: _recognize_data(res)
     return res
 
